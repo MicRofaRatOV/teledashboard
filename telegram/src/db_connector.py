@@ -1,6 +1,7 @@
 import sqlite3
 import time
 import random_generator as rgen
+import math
 
 
 # id - local id
@@ -52,6 +53,7 @@ class DBConnection:
     #    def change_id_to(self, telegram_id=0):
     #        self._tg_id = telegram_id
 
+    # TODO: add not exist protection
     def select(self, table, result_column, expr):
         return self.exec(
             """ SELECT (%(result_column)s)
@@ -88,11 +90,34 @@ class DBConnection:
                                result_column="link",
                                expr=f"telegram={self._tg_id}").fetchall()[0][0]
 
-    def not_exist_telegram(self):
-        if not self.select("user", "telegram", f"telegram={self._tg_id}").fetchall():
+    # Dont touch this function
+    def not_exist_telegram(self, tg_id=-1):
+        if tg_id == -1: tg_id = self._tg_id
+        if not self.select("user", "telegram", f"telegram={tg_id}").fetchall():
             return True
         else:
             return False
+
+    def not_exist_id(self, uid):
+        if not self.select("user", "id", f"id={uid}").fetchall():
+            return True
+        else:
+            return False
+
+    def get_id(self):
+        return self.select("user", "id", f"telegram={self._tg_id}").fetchall()[0][0]
+
+    def switch_link(self):
+        old_condition = self.select("user", "activate_link", f"telegram={self._tg_id}").fetchall()[0][0]
+        match old_condition:
+            case 0:
+                self.update("user", "activate_link", "1", f"telegram={self._tg_id}")
+                return 1  # link activated
+            case 1:
+                self.update("user", "activate_link", "0", f"telegram={self._tg_id}")
+                return 0  # link deactivated
+
+
 
     def add_link_to_log(self):
         if not self.select("user", "link_log", f"telegram={self._tg_id}").fetchall()[0][0]:
@@ -113,8 +138,8 @@ class DBConnection:
             return 0  # Пользователь
         else:
             self.add_link_to_log()
-            match int(
-                self.select(table="user", result_column="level", expr=f"telegram={self._tg_id}").fetchall()[0][0]):
+            match int(self.select(table="user", result_column="level",
+                                  expr=f"telegram={self._tg_id}").fetchall()[0][0]):
                 case 0:
                     return 0  # Пользователь
                 case 1:
@@ -129,11 +154,45 @@ class DBConnection:
         return self.select("user", "mb_total", f"telegram={self._tg_id}").fetchall()[0][0]
 
     def new_link(self):
-        ...
+        lvl = self.level()
+        match lvl:
+            case 0:
+                days = 14  # default user
+            case 1:
+                days = 0.0208  # premium user
+            case 2:
+                days = 0  # administrator
+            case _:
+                days = 0  # other
+        link_time = int(self.select("user", "link_time", f"telegram='{self._tg_id}'").fetchall()[0][0])
+        if math.ceil(int(time.time()) - link_time) > 86400 * days:
+            self._md5_link = rgen.generate_md5_str()
+            self.update("user", "link, link_time", f"'{self._md5_link}', {time.time()}", f"telegram={self._tg_id}")
+            return 0
+        else:
+            return math.ceil(int(time.time()) - link_time)
 
     def new_user(self):
         self.insert(table="user",
                     column_name="""link, level, reg_time, mb_total, telegram, ban, title, mb_traffic,
-                                   deactivate_link, link_time, click, link_log""",
-                    values=f"""'{self._md5_link}', 0, {itime()}, 0.0, {self._tg_id}, 0, 'My Page', 0.0,
-                                0, {itime()}, 0, '{self._md5_link}'""")
+                                   activate_link, link_time, click, link_log""",
+                    values=f"""'{self._md5_link}', 0, {itime()}, 0.0, {self._tg_id}, 0, 'My Page', 0.0, 
+                               0, {itime()}, 0, '{self._md5_link}'""")
+
+    # ADMINISTARATOR FUNCTIONS
+    def ban(self, db_id):    # TODO: добавить удалённого пользователя
+        if self.not_exist_id(db_id):
+            return 0  # user not exist
+        if self.select("user", "ban", f"id={db_id}").fetchall()[0][0] == 1:
+            return 2  # already banned
+        self.update("user", "ban", "1", f"id={db_id}")
+        return 1  # user is successfully BANNED
+
+    def unban(self, db_id):
+        if self.not_exist_id(db_id):
+            return 0  # user not exist
+        if self.select("user", "ban", f"id={db_id}").fetchall()[0][0] == 0:
+            return 2  # already unbanned
+        self.update("user", "ban", "0", f"id={db_id}")
+        return 1  # user is successfully unbanned
+
