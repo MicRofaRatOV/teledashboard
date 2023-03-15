@@ -1,4 +1,5 @@
 import sys
+
 sys.path.insert(1, '../')
 import server_info as sinfo
 
@@ -22,7 +23,7 @@ BAN_HELP = "Используй: /ban или /unban, <user id>\n\nНапрмер:
 # other
 LINK_UPDATED = "🔄 Ссылка упешно обновлена"
 ACTIONS_TO_BUY = "вам надо написать в этот профиль: @yellow_presss"
-LINK_ACTIVATED = "✅ Ваша ссылка была активирована\n\nДетивировать - /switchlink"
+LINK_ACTIVATED = "✅ Ваша ссылка была активирована\n\nДеактивировать - /switchlink"
 LINK_DEACTIVATED = "🛑 Ваша ссылка была деактивирована\n\nАктивировать - /switchlink"
 
 # COMMANDS
@@ -39,7 +40,6 @@ _(хватит, пожалуйста😢)_
 Справка по эксплуатации - /help\
 """
 
-
 # /help
 HELP = """\
 📎 Справка:
@@ -51,7 +51,6 @@ HELP = """\
 \
 """
 
-
 # /profile
 YOUR_PROFILE = "📂 Ваш профиль"
 SPACE_USED = "Использовано места"
@@ -61,16 +60,22 @@ ID = "ID"
 
 def level(lvl):
     match lvl:
-        case 0: return "🕹 Пользователь"
-        case 1: return PREMIUM
-        case 2: return "👑 Администратор"
+        case 0:
+            return "🕹 Пользователь"
+        case 1:
+            return PREMIUM
+        case 2:
+            return "👑 Администратор"
 
 
 def megabytes(lvl):
     match lvl:
-        case 0: return 15    # user megabytes
-        case 1: return 150   # premium megabytes
-        case 2: return 7777  # administartor megabytes
+        case 0:
+            return 15  # user megabytes
+        case 1:
+            return 150  # premium megabytes
+        case 2:
+            return 7777  # administartor megabytes
 
 
 def disc(percent):
@@ -115,3 +120,11 @@ EDIT_SLINK = """\
   Удалить суперссылку: /deleteslink (её в любое время *можно будет восстановить*)\
 """
 
+# FILES
+FILE_UPLOADED = "Файл загружен\n\nИмя файла на сервере"
+FILE_NOT_UPLOADED = "Ошибка, файл не загружен"
+
+# LOG
+LOG_ERROR = "[!ERROR!]"
+LOG_WARNING = "(WARNING)"
+LOG_INFO = "[INFO]"

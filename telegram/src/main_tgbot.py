@@ -1,14 +1,26 @@
 #!/usr/bin/python3
+import os
 
 import telebot
-from db_connector import DBConnection
+from db_connector import DBConnection, FileConnection
 import messages as tmsg
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 import server_info as sinfo
-import time
 import math
 
-bot = telebot.TeleBot("6267477219:AAEOsa0sxy1LATKpxaBX5NmTBYPIcagViMo", parse_mode="MARKDOWN")
+try:
+    import telegram_token
+except ModuleNotFoundError:
+    with open("telegram_token.py", "w", encoding="utf-8") as ttp:
+        ttp.write("TOKEN = \"\"")
+    import telegram_token
+
+if telegram_token.TOKEN == "":
+    token = input("Enter your Token here (or write your token in telegram_token.py file):")
+else:
+    token = telegram_token.TOKEN
+
+bot = telebot.TeleBot(token)
 
 
 # TODO: добавить возможность интергировать в сайт
@@ -23,6 +35,16 @@ def keyboard():
     return markup
 
 
+def file_write(message, file_type, fbc):
+    file_info = bot.get_file(message.audio.file_id)
+    downloaded_file = bot.download_file(file_info.file_path)
+    new_file = fbc.new_file(message.audio.file_name, "audio")
+    src = f"user_files/{new_file[0]}"
+    with open(src, 'wb') as file:
+        file.write(downloaded_file)
+    bot.reply_to(message, f"{tmsg.FILE_UPLOADED}: {new_file[1]}")
+
+
 @bot.message_handler(commands=["link"])
 def link(message):
     dbc = DBConnection(message.from_user.id)
@@ -34,7 +56,7 @@ def slink(message):
     dbc = DBConnection(message.from_user.id)
     match dbc.level():
         case 0:
-            bot.send_message(message.from_user.id, tmsg.YOU_CAN_BUY_SLINK)
+            bot.send_message(message.from_user.id, tmsg.YOU_CAN_BUY_SLINK, parse_mode="MARKDOWN")
         case 1 | 2:
             pass
 
@@ -46,6 +68,7 @@ def switchlink(message):
     match switch:
         case 0: bot.send_message(message.from_user.id, tmsg.LINK_DEACTIVATED)
         case 1: bot.send_message(message.from_user.id, tmsg.LINK_ACTIVATED)
+
 
 @bot.message_handler(commands=["editlink"])
 def editlink(message):
@@ -76,16 +99,28 @@ def profile(message):
     bot.send_message(message.from_user.id, combined_message, reply_markup=keyboard())
 
 
+@bot.message_handler(content_types=["audio"])
+def handle_docs_audio(message):
+    dbc = DBConnection(message.from_user.id)
+    try:
+        file_write(message, "audio", FileConnection(message.from_user.id))
+    except Exception as e:
+        bot.reply_to(message, tmsg.FILE_NOT_UPLOADED)
+        if dbc.level() == 2:
+            bot.send_message(message.from_user.id, e)
+        print(tmsg.LOG_ERROR, e)
+
+
 @bot.message_handler(commands=["start"])
 def start(message):
     dbc = DBConnection(message.from_user.id)
     if dbc.not_exist_telegram():
         # Новый пользователь
         dbc.new_user()
-        bot.send_message(message.from_user.id, tmsg.NEW_USER, reply_markup=keyboard())
+        bot.send_message(message.from_user.id, tmsg.NEW_USER, reply_markup=keyboard(), parse_mode="MARKDOWN")
     else:
         # Существующий пользователь пользователь
-        bot.send_message(message.from_user.id, tmsg.EXIST_USER, reply_markup=keyboard())
+        bot.send_message(message.from_user.id, tmsg.EXIST_USER, reply_markup=keyboard(), parse_mode="MARKDOWN")
 
 
 @bot.message_handler(commands=["help"])

@@ -2,3 +2,7 @@
 /.idea/
 user.db
 /web/src/html/pyscript/
+/telegram/src/user_files/*
+!/telegram/src/user_files/.deleted/
+/telegram/src/user_files/.deleted/*
+/telegram/src/telegram_token.py
