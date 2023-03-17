@@ -6,3 +6,4 @@ user.db
 !/telegram/src/user_files/.deleted/
 /telegram/src/user_files/.deleted/*
 /telegram/src/telegram_token.py
+/project

@@ -2,11 +2,13 @@
 import os
 
 import telebot
-from db_connector import DBConnection, FileConnection
+from db_connector import DBConnection, FileConnection, get_time_to_update
 import messages as tmsg
-from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 import server_info as sinfo
 import math
+import time
+import datetime
+from other_functions import *
 
 try:
     import telegram_token
@@ -26,24 +28,20 @@ bot = telebot.TeleBot(token)
 # TODO: добавить возможность интергировать в сайт
 
 
-def keyboard():
-    markup = ReplyKeyboardMarkup(row_width=2)
-    row = [KeyboardButton(tmsg.PROFILE), KeyboardButton(tmsg.GET_LINK), KeyboardButton(tmsg.EDIT_LINK)]
-    markup.add(*row)
-    row = [KeyboardButton(tmsg.SUPER_LINK), KeyboardButton(tmsg.PREMIUM)]
-    markup.add(*row)
-    return markup
-
-
 def file_write(message, file_type, fbc):
+    print(message)
     file_info = bot.get_file(message.audio.file_id)
     downloaded_file = bot.download_file(file_info.file_path)
-    new_file = fbc.new_file(message.audio.file_name, "audio")
+    new_file = fbc.new_file(message.audio.file_name, file_type)
     src = f"user_files/{new_file[0]}"
     with open(src, 'wb') as file:
         file.write(downloaded_file)
     bot.reply_to(message, f"{tmsg.FILE_UPLOADED}: {new_file[1]}")
 
+
+# Handle all other messages.
+# @bot.message_handler(func=lambda message: True, content_types=['audio', 'photo', 'voice', 'video', 'document',
+#     'text', 'location', 'contact', 'sticker'])
 
 @bot.message_handler(commands=["link"])
 def link(message):
@@ -58,7 +56,13 @@ def slink(message):
         case 0:
             bot.send_message(message.from_user.id, tmsg.YOU_CAN_BUY_SLINK, parse_mode="MARKDOWN")
         case 1 | 2:
-            pass
+            link_now = dbc.get_slink()
+            if link_now is not None:
+                bot.send_message(message.from_user.id, f"{tmsg.YOUR_SLINK}: {sinfo.ADDRESS}{link_now}")
+            else:
+                bot.send_message(message.from_user.id,
+                                 f"{tmsg.YOUR_SLINK_NOT_ATTACHED}\n\n{tmsg.TO_UPDATE_SLINK}", parse_mode="MARKDOWN")
+            # FORBIDDEN_SLINK_SYMBOLS parse_mode="MARKDOWN"
 
 
 @bot.message_handler(commands=["switchlink"])
@@ -66,8 +70,10 @@ def switchlink(message):
     dbc = DBConnection(message.from_user.id)
     switch = dbc.switch_link()
     match switch:
-        case 0: bot.send_message(message.from_user.id, tmsg.LINK_DEACTIVATED)
-        case 1: bot.send_message(message.from_user.id, tmsg.LINK_ACTIVATED)
+        case 0:
+            bot.send_message(message.from_user.id, tmsg.LINK_DEACTIVATED)
+        case 1:
+            bot.send_message(message.from_user.id, tmsg.LINK_ACTIVATED)
 
 
 @bot.message_handler(commands=["editlink"])
@@ -76,7 +82,7 @@ def editlink(message):
     text = tmsg.EDIT
     if dbc.level() != 0:
         text += f"\n\n{tmsg.EDIT_SLINK}"
-    bot.send_message(message.from_user.id, text)
+    bot.send_message(message.from_user.id, text, parse_mode="MARKDOWN")
 
 
 @bot.message_handler(commands=["newlink"])
@@ -85,30 +91,62 @@ def newlink(message):
     time_to_update = dbc.new_link()
     if time_to_update == 0:
         bot.send_message(message.from_user.id, tmsg.LINK_UPDATED)
-    # print(dbc.new_link()) # TODO: выводить время до обновления ссылки
+    else:
+        bot.send_message(message.from_user.id, tmsg.TIME_TO_UPDATE + \
+                         ": " + \
+                         str(datetime.timedelta(seconds=get_time_to_update(
+                             level=dbc.level(),
+                             seconds=time_to_update
+                         ))).split(".")[0])
 
 
 @bot.message_handler(commands=["profile"])
 def profile(message):
     dbc = DBConnection(message.from_user.id)
     lvl = dbc.level()
-    percent = math.ceil((dbc.mb_total()/tmsg.megabytes(lvl))*100)
+    percent = math.ceil((dbc.mb_total() / tmsg.megabytes(lvl)) * 100)
     combined_message = f"{tmsg.YOUR_PROFILE}:\n\n {tmsg.LEVEL}: {tmsg.level(lvl)}\n" + \
                        f" {tmsg.SPACE_USED}: {tmsg.disc(percent)} {math.ceil(dbc.mb_total())}" + \
                        f" из {tmsg.megabytes(lvl)} Мб\n {tmsg.ID}: {dbc.get_id()}"
     bot.send_message(message.from_user.id, combined_message, reply_markup=keyboard())
 
 
-@bot.message_handler(content_types=["audio"])
+@bot.message_handler(commands=["premium"])
+def premium(message):
+    pass
+
+
+# AUDIO
+@bot.message_handler(content_types=["audio", "photo", 'voice', 'video', 'sticker'])
 def handle_docs_audio(message):
     dbc = DBConnection(message.from_user.id)
+    fbc = FileConnection(message.from_user.id)
+    file_type = message.content_type
+    msg_type = get_msg_type(file_type, message, bot)
+    if msg_type == "defalut":
+        return
     try:
-        file_write(message, "audio", FileConnection(message.from_user.id))
+        file_info = bot.get_file(msg_type.file_id)
+        downloaded_file = bot.download_file(file_info.file_path)
+        match file_type:
+            case "voice":
+                new_file = fbc.new_file(f"voice {time.asctime()}.ogg", file_type)
+            case _:
+                new_file = fbc.new_file(msg_type.file_name, file_type)
+        src = f"user_files/{new_file[0]}"
+        with open(src, 'wb') as file:
+            file.write(downloaded_file)
+        bot.reply_to(message, f"{tmsg.FILE_UPLOADED}: {new_file[1]}")
     except Exception as e:
         bot.reply_to(message, tmsg.FILE_NOT_UPLOADED)
-        if dbc.level() == 2:
+        if dbc.level() == 2:  # only for admin
             bot.send_message(message.from_user.id, e)
         print(tmsg.LOG_ERROR, e)
+
+
+# PHOTO
+# @bot.message_handler(content_types=["photo"])
+# def
 
 
 @bot.message_handler(commands=["start"])
@@ -141,13 +179,16 @@ def ban(message):  # TODO: добавить удалённого пользов�
         return 1
 
     match dbc.ban(uid):
-        case 0: bot.send_message(message.from_user.id, tmsg.NOT_BANNED)
-        case 1: bot.send_message(message.from_user.id, tmsg.BANNED+f" {uid}")
-        case 2: bot.send_message(message.from_user.id, tmsg.ALREADY_BANNED+f" {uid}")
+        case 0:
+            bot.send_message(message.from_user.id, tmsg.NOT_BANNED)
+        case 1:
+            bot.send_message(message.from_user.id, tmsg.BANNED + f" {uid}")
+        case 2:
+            bot.send_message(message.from_user.id, tmsg.ALREADY_BANNED + f" {uid}")
 
 
 @bot.message_handler(commands=["unban"])
-def unban(message):  # TODO: добавить удалённого пользователя
+def unban(message):
     dbc = DBConnection(message.from_user.id)
     command = message.text.split()
 
@@ -157,10 +198,18 @@ def unban(message):  # TODO: добавить удалённого пользо�
         bot.send_message(message.from_user.id, tmsg.BAN_HELP)
         return 1
 
+    #    if not dbc.user_deleted(uid):
+    #        bot.send_message(message.from_user.id, tmsg.USER_DELETED)
+    #        return 0
+
     match dbc.unban(db_id=uid):
-        case 0: bot.send_message(message.from_user.id, tmsg.NOT_BANNED)
-        case 1: bot.send_message(message.from_user.id, tmsg.UNBANNED+f" {uid}")
-        case 2: bot.send_message(message.from_user.id, tmsg.ALREADY_UNBANNED+f" {uid}")
+        case 0:
+            bot.send_message(message.from_user.id, tmsg.NOT_BANNED)
+        case 1:
+            bot.send_message(message.from_user.id, tmsg.UNBANNED + f" {uid}")
+        case 2:
+            bot.send_message(message.from_user.id, tmsg.ALREADY_UNBANNED + f" {uid}")
+    return 0
 
 
 @bot.message_handler(func=lambda message: True)
@@ -169,7 +218,7 @@ def all_messages(message):
         case tmsg.PROFILE:    profile(message)
         case tmsg.GET_LINK:   link(message)
         case tmsg.SUPER_LINK: slink(message)
-        case tmsg.PREMIUM:    pass
+        case tmsg.PREMIUM:    premium(message)
         case tmsg.EDIT_LINK:  editlink(message)
 
 

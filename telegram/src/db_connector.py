@@ -3,7 +3,8 @@ import time
 import random_generator as rgen
 import math
 import server_info as sinfo
-import shutil, os
+import shutil
+import os
 import messages as tmsg
 
 
@@ -30,8 +31,12 @@ def itime():
     return int(time.time())
 
 
+# DBLink
+DB = sinfo.DBL
+
+
 class Connection:
-    def __init__(self, telegram_id=0, path="./db/user.db"):
+    def __init__(self, telegram_id=0, path=DB):
         self._db_link = path  # Path to database
         self._tg_id = str(telegram_id)
         self._con = sqlite3.connect(self._db_link)
@@ -91,8 +96,25 @@ class Connection:
         return self.select("user", "id", f"telegram={self._tg_id}").fetchall()[0][0]
 
 
+def level_time(lvl):
+    match lvl:
+        case 0:
+            return 14  # default user
+        case 1:
+            return 0.0208  # premium user
+        case 2:
+            return 0  # administrator
+        case _:
+            return 0  # other
+
+
+def get_time_to_update(level, seconds):
+    days = level_time(level)
+    return (86400 * days) - seconds
+
+
 class DBConnection(Connection):
-    def __init__(self, telegram_id=0, path="./db/user.db"):
+    def __init__(self, telegram_id=0, path=DB):
         self._db_link = path  # Path to database
         self._tg_id = str(telegram_id)
         self._con = sqlite3.connect(self._db_link)
@@ -169,24 +191,22 @@ class DBConnection(Connection):
     def mb_total(self):
         return self.select("user", "mb_total", f"telegram={self._tg_id}").fetchall()[0][0]
 
+    def get_slink(self):
+        if self.not_exist_telegram():
+            return None
+        return self.select("user", "super_link", f"telegram={self._tg_id}").fetchall()[0][0]
+
+
     def new_link(self):
         lvl = self.level()
-        match lvl:
-            case 0:
-                days = 14  # default user
-            case 1:
-                days = 0.0208  # premium user
-            case 2:
-                days = 0  # administrator
-            case _:
-                days = 0  # other
+        days = level_time(lvl)
         link_time = int(self.select("user", "link_time", f"telegram='{self._tg_id}'").fetchall()[0][0])
-        if math.ceil(int(time.time()) - link_time) > 86400 * days:
+        if math.ceil(itime() - link_time) > 86400 * days:
             self._md5_link = rgen.generate_md5_str()
-            self.update("user", "link, link_time", f"'{self._md5_link}', {time.time()}", f"telegram={self._tg_id}")
+            self.update("user", "link, link_time", f"'{self._md5_link}', {itime()}", f"telegram={self._tg_id}")
             return 0
         else:
-            return math.ceil(int(time.time()) - link_time)
+            return math.ceil(itime() - link_time)
 
     def new_user(self):
         self.insert(table="user",
@@ -212,6 +232,8 @@ class DBConnection(Connection):
         self.update("user", "ban", "0", f"id={db_id}")
         return 1  # user is successfully unbanned
 
+    #def user_deleted(self, uid):
+    #    return self.select("user", "")
 
 # FILE BD CONNECTION
 # key - md5 name of file
@@ -224,8 +246,9 @@ class DBConnection(Connection):
 # load_time - timestamp of load
 # deletion_time - timestamp of delete / -1 - file isnt deleted
 
+
 class FileConnection(Connection):
-    def __init__(self, telegram_id=0, path="./db/user.db"):
+    def __init__(self, telegram_id=0, path=DB):
         self._db_link = path  # Path to database
         self._tg_id = str(telegram_id)
         self._con = sqlite3.connect(self._db_link)
