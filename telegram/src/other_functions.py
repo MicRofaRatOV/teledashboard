@@ -27,3 +27,29 @@ def get_msg_type(file_type, message, bot):
         case _:
             bot.send_message(message.from_user.id, tmsg.UNKNOWN_FILE_TYPE)
     return msg_type
+
+
+def sl_msg(command, message, dbc, bot, cas, sinfo):
+    match command[0]:
+        # Update slink
+        case "sl":
+            match dbc.change_slink(command[1]):
+                # succesful changed
+                case 0:
+                    bot.send_message(message.from_user.id, tmsg.SLINK_UPDATED)
+                # non-changed
+                case 1:
+                    bot.send_message(message.from_user.id, tmsg.SLINK_OCCUPIED)
+                case 2:
+                    bot.send_message(message.from_user.id, tmsg.SLINK_EMPTY)
+                case 3:
+                    bot.send_message(message.from_user.id,
+                                     tmsg.SLINK_NOT_ALLOWED_SYMBOLS + "\n\n" + tmsg.ALLOWED_SYMBOLS + ": " +
+                                     cas.SLINK_SYMBOLS)
+                case 4:
+                    bot.send_message(message.from_user.id,
+                                     tmsg.VERY_LONG_SLINK + ": " + str(sinfo.MAX_SLINK_LENGTH))
+
+                case 5:
+                    bot.send_message(message.from_user.id,
+                                     tmsg.VERY_SHORT_SLINK + ": " + str(sinfo.MIN_SLINK_LENGTH))

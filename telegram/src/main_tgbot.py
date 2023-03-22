@@ -9,6 +9,7 @@ import math
 import time
 import datetime
 from other_functions import *
+import check_allowed_symbols as cas
 
 try:
     import telegram_token
@@ -46,7 +47,7 @@ def file_write(message, file_type, fbc):
 @bot.message_handler(commands=["link"])
 def link(message):
     dbc = DBConnection(message.from_user.id)
-    bot.send_message(message.from_user.id, f"{sinfo.ADDRESS}{dbc.get_md5()}")
+    bot.send_message(message.from_user.id, f"{tmsg.YOUR_LINK}: {sinfo.ADDRESS}{dbc.get_md5()}")
 
 
 @bot.message_handler(commands=["slink"])
@@ -63,6 +64,13 @@ def slink(message):
                 bot.send_message(message.from_user.id,
                                  f"{tmsg.YOUR_SLINK_NOT_ATTACHED}\n\n{tmsg.TO_UPDATE_SLINK}", parse_mode="MARKDOWN")
             # FORBIDDEN_SLINK_SYMBOLS parse_mode="MARKDOWN"
+
+
+@bot.message_handler(commands=["changeslink"])
+def how_to_change_slink(message):
+    dbc = DBConnection(message.from_user.id)
+    if dbc.level != 0:
+        bot.send_message(message.from_user.id, tmsg.TO_UPDATE_SLINK)
 
 
 @bot.message_handler(commands=["switchlink"])
@@ -220,6 +228,10 @@ def all_messages(message):
         case tmsg.SUPER_LINK: slink(message)
         case tmsg.PREMIUM:    premium(message)
         case tmsg.EDIT_LINK:  editlink(message)
+    if message.text.count(":") > 0:
+        command = message.text.split(":")
+        dbc = DBConnection(message.from_user.id)
+        sl_msg(command, message, dbc, bot, cas, sinfo)
 
 
 def main():

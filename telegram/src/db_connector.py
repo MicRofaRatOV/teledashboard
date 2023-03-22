@@ -6,6 +6,7 @@ import server_info as sinfo
 import shutil
 import os
 import messages as tmsg
+import check_allowed_symbols as cas
 
 
 # id - local id
@@ -196,6 +197,34 @@ class DBConnection(Connection):
             return None
         return self.select("user", "super_link", f"telegram={self._tg_id}").fetchall()[0][0]
 
+    def is_slink_exist(self, slink):
+        check_slink = self.select("user", "super_link", f"super_link='{slink}'").fetchall()
+        # DO NOT CHANGE == TO is !!!
+        if check_slink == []:
+            return False
+        else:
+            return True
+
+    def change_slink(self, new):
+        # TODO: check forbidden symbols
+        if new == "":
+            # empty slink
+            return 2
+        if not cas.check_slink(new):
+            # forbidden sybols
+            return 3
+        if len(new) > sinfo.MAX_SLINK_LENGTH:
+            # very long link
+            return 4
+        if not(len(new) >= sinfo.MIN_SLINK_LENGTH or self.level() == 2):
+            # very short link
+            return 5
+        if self.is_slink_exist(new):
+            # error: link alredy exist
+            return 1
+        else:
+            self.update("user", "super_link", f"'{new}'", f"telegram={self._tg_id}")
+            return 0
 
     def new_link(self):
         lvl = self.level()
@@ -331,6 +360,11 @@ class FileConnection(Connection):
         if key == "defalut": key = self.get_file_key(name)
         if self.is_key_exist(key):
             return self.select("file", "file_type", f"key='{key}'").fetchall()[0][0]
+
+    def add_mb_traffc(self, mb):
+        if self.is_user_exist() and mb > 0.0:
+            now = self.select("file", "mb_traffic", f"id={self._uid}").fetchall()[0][0]
+            self.update("file", "mb_traffic", str(now+mb), f"id={self._uid}")
 
     def new_file(self, file_name, file_type):
         key = rgen.generate_md5_str()
