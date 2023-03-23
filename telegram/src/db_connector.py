@@ -52,7 +52,6 @@ class Connection:
     def exec(self, command):
         return self._cur.execute(command)
 
-    # TODO: add not exist protection
     def select(self, table, result_column, expr):
         return self.exec(
             """ SELECT (%(result_column)s)
@@ -100,13 +99,13 @@ class Connection:
 def level_time(lvl):
     match lvl:
         case 0:
-            return 14  # default user
+            return sinfo.DEFAULT_CHANGE_TIME  # default user
         case 1:
-            return 0.0208  # premium user
+            return sinfo.PREMIUM_CHANGE_TIME  # premium user
         case 2:
-            return 0  # administrator
+            return 0                          # administrator
         case _:
-            return 0  # other
+            return 0                          # other
 
 
 def get_time_to_update(level, seconds):
@@ -149,6 +148,10 @@ class DBConnection(Connection):
             return False
 
     def switch_link(self):
+        """
+        0 - link deactivated;
+        1 - link activated.
+        """
         old_condition = self.select("user", "activate_link", f"telegram={self._tg_id}").fetchall()[0][0]
         match old_condition:
             case 0:
@@ -172,6 +175,11 @@ class DBConnection(Connection):
                 return False  # code 0
 
     def level(self):
+        """
+        0 - user;
+        1 - premium;
+        2 - administrator.
+        """
         if self.not_exist_telegram():
             self.new_user()
             return 0  # Пользователь
@@ -206,25 +214,42 @@ class DBConnection(Connection):
             return True
 
     def change_slink(self, new):
-        # TODO: check forbidden symbols
+        """
+        0 - successful change;
+        1 - error: link alredy exist;
+        2 - empty slink;
+        3 - forbidden sybols;
+        4 - very long link;
+        5 - very short link.
+        """
         if new == "":
-            # empty slink
             return 2
         if not cas.check_slink(new):
-            # forbidden sybols
             return 3
         if len(new) > sinfo.MAX_SLINK_LENGTH:
-            # very long link
             return 4
         if not(len(new) >= sinfo.MIN_SLINK_LENGTH or self.level() == 2):
-            # very short link
             return 5
         if self.is_slink_exist(new):
-            # error: link alredy exist
             return 1
         else:
             self.update("user", "super_link", f"'{new}'", f"telegram={self._tg_id}")
             return 0
+
+    def delete_slink(self, uid=-1):
+        """
+        0 - success;
+        1 - not exist id;
+        2 - NULL (None) link.
+        """
+        if uid == -1:
+            uid = self.get_id()
+        if self.not_exist_id(uid):
+            return 1
+        if self.select("user", "super_link", f"id={uid}").fetchall()[0][0] is None:
+            return 2
+        self.update("user", "super_link", "NULL", f"id={uid}")
+        return 0
 
     def new_link(self):
         lvl = self.level()
@@ -245,21 +270,31 @@ class DBConnection(Connection):
                                0, {itime()}, 0, '{self._md5_link}'""")
 
     # ADMINISTARATOR FUNCTIONS
-    def ban(self, db_id):  # TODO: добавить удалённого пользователя
+    def ban(self, db_id):
+        """
+        0 - user not exist;
+        1 - already banned;
+        2 - user is successfully BANNED.
+        """
         if self.not_exist_id(db_id):
-            return 0  # user not exist
+            return 0
         if self.select("user", "ban", f"id={db_id}").fetchall()[0][0] == 1:
-            return 2  # already banned
+            return 2
         self.update("user", "ban", "1", f"id={db_id}")
-        return 1  # user is successfully BANNED
+        return 1
 
     def unban(self, db_id):
+        """
+        0 - user not exist;
+        1 - user is successfully unbanned;
+        2 - already unbanned.
+        """
         if self.not_exist_id(db_id):
-            return 0  # user not exist
+            return 0
         if self.select("user", "ban", f"id={db_id}").fetchall()[0][0] == 0:
-            return 2  # already unbanned
+            return 2
         self.update("user", "ban", "0", f"id={db_id}")
-        return 1  # user is successfully unbanned
+        return 1
 
     #def user_deleted(self, uid):
     #    return self.select("user", "")
@@ -413,6 +448,11 @@ class FileConnection(Connection):
                 return False
 
     def kill_file(self, key):
+        """
+        True - file killed;
+        False - file already killed;
+        None - file not found.
+        """
         if self.is_key_exist(key):
             match int(self.select("file", "status", f"key='{key}'").fetchall()[0][0]):
                 case 1:
@@ -421,10 +461,10 @@ class FileConnection(Connection):
                         os.remove(f"./user_files/.deleted/{self.get_file_key(self.get_file_name(key))}")
                         self.update("file", "status", "-1", f"key='{key}'")
                     except FileNotFoundError:
-                        return None  # file not found
-                    return True  # file killed
+                        return None
+                    return True
                 case -1:
-                    return False  # file already killed
+                    return False
                 case _:
                     self.delete_file(key)
                     self.kill_file(key)

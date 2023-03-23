@@ -70,7 +70,17 @@ def slink(message):
 def how_to_change_slink(message):
     dbc = DBConnection(message.from_user.id)
     if dbc.level != 0:
-        bot.send_message(message.from_user.id, tmsg.TO_UPDATE_SLINK)
+        bot.send_message(message.from_user.id, tmsg.TO_UPDATE_SLINK, parse_mode="MARKDOWN")
+
+
+@bot.message_handler(commands=["deleteslink"])
+def delete_slink(message):
+    dbc = DBConnection(message.from_user.id)
+    if dbc.level != 0:
+        if not dbc.delete_slink():
+            bot.send_message(message.from_user.id, tmsg.SLINK_SUCCESSFUL_DELETED)
+        else:
+            bot.send_message(message.from_user.id, tmsg.SLINK_NOT_DELETED)
 
 
 @bot.message_handler(commands=["switchlink"])
@@ -121,7 +131,9 @@ def profile(message):
 
 @bot.message_handler(commands=["premium"])
 def premium(message):
-    pass
+    dbc = DBConnection(message.from_user.id)
+    if dbc.level() == 0:
+        bot.send_message(message.from_user.id, tmsg.YOU_CAN_BUY_PREMUIM)
 
 
 # AUDIO
@@ -176,7 +188,7 @@ def help_page(message):
 
 # ADMINISTRATOR FUNCTIONS
 @bot.message_handler(commands=["ban"])
-def ban(message):  # TODO: добавить удалённого пользователя
+def ban(message):
     dbc = DBConnection(message.from_user.id)
     command = message.text.split()
 

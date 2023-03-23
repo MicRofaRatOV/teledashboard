@@ -53,3 +53,13 @@ def sl_msg(command, message, dbc, bot, cas, sinfo):
                 case 5:
                     bot.send_message(message.from_user.id,
                                      tmsg.VERY_SHORT_SLINK + ": " + str(sinfo.MIN_SLINK_LENGTH))
+
+
+def megabytes(lvl):
+    match lvl:
+        case 0:
+            return 15    # user megabytes
+        case 1:
+            return 150   # premium megabytes
+        case 2:
+            return 7777  # administartor megabytes
