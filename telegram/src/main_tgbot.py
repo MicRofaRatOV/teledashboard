@@ -1,5 +1,6 @@
 #!/usr/bin/python3
-import os
+
+# import os
 
 import telebot
 from db_connector import DBConnection, FileConnection, get_time_to_update
@@ -27,23 +28,21 @@ bot = telebot.TeleBot(token)
 
 
 # TODO: добавить возможность интергировать в сайт
+# TODO: добавить запрет на использование бота забаненным пользователям
+# TODO: добавить ограничение по времени для загрузки файлов
 
 
-def file_write(message, file_type, fbc):
-    print(message)
-    msg = get_msg_type(file_type)
-    file_info = bot.get_file(msg.file_id)
-    downloaded_file = bot.download_file(file_info.file_path)
-    new_file = fbc.new_file(msg.file_name, file_type)
-    src = f"user_files/{new_file[0]}"
-    with open(src, 'wb') as file:
-        file.write(downloaded_file)
-    bot.reply_to(message, f"{tmsg.FILE_UPLOADED}: {new_file[1]}")
+# def file_write(message, file_type, fbc):
+#    print(message)
+#    msg = get_msg_type(file_type)
+#    file_info = bot.get_file(msg.file_id)
+#    downloaded_file = bot.download_file(file_info.file_path)
+#    new_file = fbc.new_file(msg.file_name, file_type)
+#    src = f"user_files/{new_file[0]}"
+#    with open(src, 'wb') as file:
+#        file.write(downloaded_file)
+#    bot.reply_to(message, f"{tmsg.FILE_UPLOADED}: {new_file[1]}")
 
-
-# Handle all other messages.
-# @bot.message_handler(func=lambda message: True, content_types=['audio', 'photo', 'voice', 'video', 'document',
-#     'text', 'location', 'contact', 'sticker'])
 
 @bot.message_handler(commands=["link"])
 def link(message):
@@ -111,8 +110,7 @@ def newlink(message):
     if time_to_update == 0:
         bot.send_message(message.from_user.id, tmsg.LINK_UPDATED)
     else:
-        bot.send_message(message.from_user.id, tmsg.TIME_TO_UPDATE + \
-                         ": " + \
+        bot.send_message(message.from_user.id, tmsg.TIME_TO_UPDATE + ": " +
                          str(datetime.timedelta(seconds=get_time_to_update(
                              level=dbc.level(),
                              seconds=time_to_update
@@ -123,11 +121,25 @@ def newlink(message):
 def profile(message):
     dbc = DBConnection(message.from_user.id)
     lvl = dbc.level()
+    fbc = FileConnection(message.from_user.id)
+    flist = fbc.file_names_list()
+    fstr = ""
+    if len(flist) == 0:
+        fmsg = ""
+    else:
+        for i in range(len(flist)):
+            fstr += f"{i + 1}. {flist[i]}\n"
+        fmsg = f"\n\n{tmsg.FILES}:\n\n{fstr}"
     percent = math.ceil((dbc.mb_total() / tmsg.megabytes(lvl)) * 100)
     combined_message = f"{tmsg.YOUR_PROFILE}:\n\n {tmsg.LEVEL}: {tmsg.level(lvl)}\n" + \
                        f" {tmsg.SPACE_USED}: {tmsg.disc(percent)} {math.ceil(dbc.mb_total())}" + \
-                       f" из {tmsg.megabytes(lvl)} Мб\n {tmsg.ID}: {dbc.get_id()}"
+                       f" из {tmsg.megabytes(lvl)} Мб\n {tmsg.ID}: {dbc.get_id()}" + fmsg
     bot.send_message(message.from_user.id, combined_message, reply_markup=keyboard())
+
+
+@bot.message_handler(commands=["select"])
+def select(message):
+    bot.send_message(message.from_user.id, tmsg.TO_SELECT_FILE, parse_mode="MARKDOWN")
 
 
 @bot.message_handler(commands=["premium"])
@@ -135,6 +147,11 @@ def premium(message):
     dbc = DBConnection(message.from_user.id)
     if dbc.level() == 0:
         bot.send_message(message.from_user.id, tmsg.YOU_CAN_BUY_PREMUIM)
+    else:
+        bot.send_message(message.from_user.id, tmsg.YOU_HAVE_PREMIUM, parse_mode="MARKDOWN")
+
+
+# TODO: /history fot premium
 
 
 # AUDIO
@@ -144,6 +161,15 @@ def handle_docs_audio(message):
     fbc = FileConnection(message.from_user.id)
     file_type = message.content_type
     msg_type = get_msg_type(file_type, message, bot)
+    lvl = dbc.level()
+    # using mega- 10^6 (not mebi- 2^20) bytes
+    if file_type != "photo":
+        fsize = msg_type.file_size / 1_000_000
+    else:
+        fsize = msg_type[-1].file_size / 1_000_000
+    if fsize > megabytes(lvl):
+        bot.send_message(message.from_user.id, tmsg.NO_SPACE)
+        return
 
     if msg_type == "defalut":
         return  # impossible ???
@@ -151,25 +177,29 @@ def handle_docs_audio(message):
     try:
         match file_type:
             case "voice":
-                new_file = fbc.new_file(f"voice_{time.asctime()}.ogg", file_type)
+                new_file = fbc.new_file(f"voice_{time.asctime()}.ogg", file_type, fsize, lvl)
                 file_info = bot.get_file(msg_type.file_id)
             case "photo":
-                new_file = fbc.new_file(f"photo_{time.asctime()}.jpg", file_type)
+                new_file = fbc.new_file(f"photo_{time.asctime()}.jpg", file_type, fsize, lvl)
                 file_info = bot.get_file(msg_type[-1].file_id)
             case "sticker":
                 file_info = bot.get_file(msg_type.file_id)
                 if msg_type.is_animated:
-                    new_file = fbc.new_file(f"sticker_{time.asctime()}.tgs", file_type)
+                    new_file = fbc.new_file(f"sticker_{time.asctime()}.tgs", file_type, fsize, lvl)
                 elif msg_type.is_video:
-                    new_file = fbc.new_file(f"sticker_{time.asctime()}.webm", file_type)
+                    new_file = fbc.new_file(f"sticker_{time.asctime()}.webm", file_type, fsize, lvl)
                 else:
-                    new_file = fbc.new_file(f"sticker_{time.asctime()}.webp", file_type)
+                    new_file = fbc.new_file(f"sticker_{time.asctime()}.webp", file_type, fsize, lvl)
             case "video_note":
-                new_file = fbc.new_file(f"videonote_{time.asctime()}.mp4", file_type)
+                new_file = fbc.new_file(f"videonote_{time.asctime()}.mp4", file_type, fsize, lvl)
                 file_info = bot.get_file(msg_type.file_id)
             case _:
-                new_file = fbc.new_file(msg_type.file_name, file_type)
+                new_file = fbc.new_file(msg_type.file_name, file_type, fsize, lvl)
                 file_info = bot.get_file(msg_type.file_id)
+
+        if new_file[0] is None:
+            bot.send_message(message.from_user.id, tmsg.NO_SPACE)
+            return
 
         downloaded_file = bot.download_file(file_info.file_path)
         src = f"user_files/{new_file[0]}"
@@ -180,13 +210,8 @@ def handle_docs_audio(message):
     except Exception as e:
         bot.reply_to(message, tmsg.FILE_NOT_UPLOADED)
         if dbc.level() == 2:  # only for admin
-            bot.send_message(message.from_user.id, e)
+            bot.send_message(message.from_user.id, str(e))
         print(tmsg.LOG_ERROR, e)
-
-
-# PHOTO
-# @bot.message_handler(content_types=["photo"])
-# def
 
 
 @bot.message_handler(commands=["start"])
@@ -254,17 +279,60 @@ def unban(message):
 
 @bot.message_handler(func=lambda message: True)
 def all_messages(message):
-    print(message)
     match message.text:
-        case tmsg.PROFILE:    profile(message)
-        case tmsg.GET_LINK:   link(message)
-        case tmsg.SUPER_LINK: slink(message)
-        case tmsg.PREMIUM:    premium(message)
-        case tmsg.EDIT_LINK:  editlink(message)
+        case tmsg.PROFILE:
+            profile(message)
+            return
+        case tmsg.GET_LINK:
+            link(message)
+            return
+        case tmsg.SUPER_LINK:
+            slink(message)
+            return
+        case tmsg.PREMIUM:
+            premium(message)
+            return
+        case tmsg.EDIT_LINK:
+            editlink(message)
+            return
     if message.text.count(":") > 0:
         command = message.text.split(":")
-        dbc = DBConnection(message.from_user.id)
-        sl_msg(command, message, dbc, bot, cas, sinfo)
+        match command[0]:
+            # Change super link
+            case "sl":
+                dbc = DBConnection(message.from_user.id)
+                if dbc.level() != 0:
+                    sl_msg(command, message, dbc, bot, cas, sinfo)
+                else:
+                    bot.send_message(message.from_user.id, tmsg.YOU_CAN_BUY_SLINK)
+            # Select active file
+            case "f":
+                fbc = FileConnection(message.from_user.id)
+                flist = fbc.file_names_list()
+                frawl = fbc.files_list()
+                fstr = ""
+                if len(flist) == 0:
+                    fmsg = ""
+                else:
+                    for i in range(len(flist)):
+                        fstr += f"{i + 1}/{frawl[i]}\n"
+                try:
+                    if int(command[1])-1 >= 0:
+                        fbc.select_file(frawl[int(command[1])-1])
+                        bot.send_message(message.from_user.id, tmsg.SELECTED_FILE + ": " +
+                                         fbc.get_file_name(frawl[int(command[1])-1]))
+                        return
+                except IndexError:
+                    bot.send_message(message.from_user.id, tmsg.FILE_NOT_FOUND)
+                    return
+                except ValueError:
+                    bot.send_message(message.from_user.id, tmsg.ICORRECT_NUMBER)
+                    return
+                print(1)
+                bot.send_message(message.from_user.id, tmsg.ICORRECT_NUMBER)
+        return
+
+    bot.send_message(message.from_user.id, tmsg.UNKNOWN_COMMAND, reply_markup=keyboard())
 
 
 def main():

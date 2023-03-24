@@ -7,6 +7,7 @@ import shutil
 import os
 import messages as tmsg
 import check_allowed_symbols as cas
+from other_functions import megabytes
 
 
 # id - local id
@@ -80,7 +81,8 @@ class Connection:
         self._con.commit()
 
     def not_exist_telegram(self, tg_id=-1):
-        if tg_id == -1: tg_id = self._tg_id
+        if tg_id == -1:
+            tg_id = self._tg_id
         if not self.select("user", "telegram", f"telegram={tg_id}").fetchall():
             return True
         else:
@@ -115,6 +117,7 @@ def get_time_to_update(level, seconds):
 
 class DBConnection(Connection):
     def __init__(self, telegram_id=0, path=DB):
+        super().__init__(telegram_id, path)
         self._db_link = path  # Path to database
         self._tg_id = str(telegram_id)
         self._con = sqlite3.connect(self._db_link)
@@ -296,8 +299,8 @@ class DBConnection(Connection):
         self.update("user", "ban", "0", f"id={db_id}")
         return 1
 
-    #def user_deleted(self, uid):
-    #    return self.select("user", "")
+    # def user_deleted(self, uid):
+    #     return self.select("user", "")
 
 # FILE BD CONNECTION
 # key - md5 name of file
@@ -313,6 +316,7 @@ class DBConnection(Connection):
 
 class FileConnection(Connection):
     def __init__(self, telegram_id=0, path=DB):
+        super().__init__(telegram_id, path)
         self._db_link = path  # Path to database
         self._tg_id = str(telegram_id)
         self._con = sqlite3.connect(self._db_link)
@@ -380,47 +384,126 @@ class FileConnection(Connection):
 
     def files_list(self):
         list_of_files = []
-        for x in self.select("file", "key", f"owner={self._uid} AND status=0").fetchall():
+        raw = self.select("file", "key", f"owner={self._uid} AND status=0").fetchall()
+        if raw == []:
+            return raw
+        for x in raw:
             list_of_files.append(x[0])
         return list_of_files
+
+    def file_names_list(self):
+        list_of_files = []
+        list_of_names = []
+        for x in self.select("file", "key", f"owner={self._uid} AND status=0").fetchall():
+            list_of_files.append(x[0])
+        for x in list_of_files:
+            list_of_names.append(self.select("file", "name", f"key='{x}'").fetchall()[0][0])
+        return list_of_names
 
     def get_file_name(self, key):
         if self.is_key_exist(key):
             return self.select("file", "name", f"key='{key}'").fetchall()[0][0]
 
     def full_files_list(self):
+        # TODO: full files list
         pass
+
+    def select_file(self, key):
+        self.update("user", "selected_file", f"'{key}'", f"telegram={self._tg_id}")
+
+    def get_selected_file(self, uid=-1):
+        if uid == -1:
+            uid = self._uid
+        sf = self.select("user", "selected_file", f"id={uid}").fetchall()
+        if sf is None:
+            return None
+        else:
+            return sf[0][0]
+
+    def used_space(self, uid=-1):
+        if uid == -1:
+            uid = self._uid
+        mb_list = self.select("file", "mb_size", f"owner={uid} AND status=0").fetchall()
+        mb = 0.0
+        for x in mb_list:
+            mb += x[0]
+        self.update("user", "mb_total", mb, f"id={uid}")
+        return mb
 
     def get_file_type(self, key="default", name="default"):
         if key == "defalut": key = self.get_file_key(name)
         if self.is_key_exist(key):
             return self.select("file", "file_type", f"key='{key}'").fetchall()[0][0]
 
+    def remove_oldest_file(self, uid=-1):
+        """
+        0 - succed;
+        1 - no files
+        """
+        if uid == -1:
+            uid = self._uid
+        load_time = []
+        flist = self.files_list()
+        # DO NO CHANGE == TO is
+        if flist == []:
+            self.update("user", "mb_total", 0.0, f"id={uid}")
+            return 1
+        for f in flist:
+            load_time.append(self.select("file", "load_time", f"owner={uid}").fetchall()[0][0])
+        temp = min(load_time)
+        res = [i for i, j in enumerate(load_time) if j == temp]
+        self.delete_file(flist[res[0]])
+        return 0
+
+    def add_mb_total(self, mb, lvl):
+        """
+        0 - succed;
+        1 - file is too large;
+        2 - no space.
+        """
+        if self.is_user_exist():
+            now = self.select("user", "mb_total", f"id={self._uid}").fetchall()[0][0]
+            if mb > megabytes(lvl):
+                return 1
+            if now+mb > megabytes(lvl):
+                if self.remove_oldest_file():
+                    return 2
+                self.add_mb_total(mb, lvl)
+                now = self.select("user", "mb_total", f"id={self._uid}").fetchall()[0][0]
+                self.update("user", "mb_total", now + mb, f"id={self._uid}")
+                return 0
+            else:
+                self.add_mb_traffc(mb)
+                self.update("user", "mb_total", now+mb, f"id={self._uid}")
+
     def add_mb_traffc(self, mb):
         if self.is_user_exist() and mb > 0.0:
-            now = self.select("file", "mb_traffic", f"id={self._uid}").fetchall()[0][0]
-            self.update("file", "mb_traffic", str(now+mb), f"id={self._uid}")
+            now = self.select("user", "mb_traffic", f"id={self._uid}").fetchall()[0][0]
+            self.update("user", "mb_traffic", str(now+mb), f"id={self._uid}")
 
-    def new_file(self, file_name, file_type):
+    def new_file(self, file_name, file_type, file_size=0.1, lvl=0):
         key = rgen.generate_md5_str()
         fsn = cas.file_safe_name(file_name)
+        if self.add_mb_total(file_size, lvl):
+            return None, None
         if not self.get_path_to_file(fsn):
             # if user dont have two or comre files with same names
             # yeas, my English B)
             self.insert(
                 table="file",
-                column_name="key, owner, status, name, load_time, deletion_time, file_type",
-                values=f"'{key}', {self._uid}, 0, '{fsn}', {itime()}, -1, '{file_type}'"
+                column_name="key, owner, status, name, load_time, deletion_time, file_type, mb_size",
+                values=f"'{key}', {self._uid}, 0, '{fsn}', {itime()}, -1, '{file_type}', {file_size}"
             )
             return key, fsn
         else:
             x = 0
+            new_file_name = ""
             while x < sinfo.MAX_EPONYMOUS_FILES:
                 if x == sinfo.MAX_EPONYMOUS_FILES - 2:
                     new_file_name = rgen.generate_md5_str()
                     break
                 new_file_name = ""
-                iter_file_name = self.select("file", "name", f"name='{file_name}' AND owner={self._uid}").fetchall()
+                iter_file_name = self.select("file", "name", f"name='{fsn}' AND owner={self._uid}").fetchall()
                 if iter_file_name:
                     new_file_name = iter_file_name[0][0] + str(x)
                     if not self.is_file_exist(new_file_name):
@@ -430,10 +513,9 @@ class FileConnection(Connection):
                 x += 1
             self.insert(
                 table="file",
-                column_name="key, owner, status, name, load_time, deletion_time, file_type",
-                values=f"'{key}', {self._uid}, 0, '{new_file_name}', {itime()}, -1, '{file_type}'"
+                column_name="key, owner, status, name, load_time, deletion_time, file_type, mb_size",
+                values=f"'{key}', {self._uid}, 0, '{new_file_name}', {itime()}, -1, '{file_type}', {file_size}"
             )
-
             return key, new_file_name
 
     def delete_file(self, key):
@@ -441,9 +523,11 @@ class FileConnection(Connection):
             if not self.select("file", "status", f"key='{key}'").fetchall()[0][0]:
                 try:
                     shutil.move(f"user_files/{key}", "user_files/.deleted/")
-                except shutil.Error:
-                    print(tmsg.LOG_WARNING, shutil.Error)
+                except Exception as e:
+                    print(tmsg.LOG_WARNING, str(e))
                 self.update("file", "status", "1", f"key='{key}'")
+                uid = self.select("file", "owner", f"key='{key}'").fetchall()[0][0]
+                self.used_space(uid)
                 return True
             else:
                 return False
