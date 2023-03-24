@@ -1,6 +1,6 @@
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 import messages as tmsg
-
+from server_info import USER_MEGABYTES, PREMIUM_MEGABYTES, ADMINISTRATOR_MEGABYTES
 
 def keyboard():
     markup = ReplyKeyboardMarkup(row_width=2)
@@ -58,8 +58,8 @@ def sl_msg(command, message, dbc, bot, cas, sinfo):
 def megabytes(lvl):
     match lvl:
         case 0:
-            return 15    # user megabytes
+            return USER_MEGABYTES           # user megabytes
         case 1:
-            return 150   # premium megabytes
+            return PREMIUM_MEGABYTES        # premium megabytes
         case 2:
-            return 7777  # administartor megabytes
+            return ADMINISTRATOR_MEGABYTES  # administartor megabytes

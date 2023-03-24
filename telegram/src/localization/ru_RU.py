@@ -11,6 +11,7 @@ GET_LINK = "🔗 Получить ссылку"
 SUPER_LINK = "🌟 Суперссылка"
 PREMIUM = "🌟 Премиум"
 EDIT_LINK = "✏ Редактировать ссылки"
+LOAD_FILE = "📂 Управление файлами"
 ERROR = "Ошибка"
 
 # administrator
@@ -30,8 +31,9 @@ LINK_DEACTIVATED = "🛑 Ваша ссылка была деактивирова
 ALLOWED_SYMBOLS = "🔣 Допустимые символы"
 
 # COMMANDS
-# /start
+# /start # TODO: remove dev mode
 NEW_USER = """\
+BOT WORKING IN DEV MODE
 Вы зарегистрированы в системе 👌
 
 Справка по эксплуатации - /help\

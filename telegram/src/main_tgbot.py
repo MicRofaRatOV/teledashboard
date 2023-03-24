@@ -31,9 +31,10 @@ bot = telebot.TeleBot(token)
 
 def file_write(message, file_type, fbc):
     print(message)
-    file_info = bot.get_file(message.audio.file_id)
+    msg = get_msg_type(file_type)
+    file_info = bot.get_file(msg.file_id)
     downloaded_file = bot.download_file(file_info.file_path)
-    new_file = fbc.new_file(message.audio.file_name, file_type)
+    new_file = fbc.new_file(msg.file_name, file_type)
     src = f"user_files/{new_file[0]}"
     with open(src, 'wb') as file:
         file.write(downloaded_file)
@@ -143,20 +144,35 @@ def handle_docs_audio(message):
     fbc = FileConnection(message.from_user.id)
     file_type = message.content_type
     msg_type = get_msg_type(file_type, message, bot)
+
     if msg_type == "defalut":
-        return
+        return  # impossible ???
+
     try:
-        file_info = bot.get_file(msg_type.file_id)
-        downloaded_file = bot.download_file(file_info.file_path)
         match file_type:
             case "voice":
-                new_file = fbc.new_file(f"voice {time.asctime()}.ogg", file_type)
+                new_file = fbc.new_file(f"voice_{time.asctime()}.ogg", file_type)
+            case "photo":
+                new_file = fbc.new_file(f"photo_{time.asctime()}.jpg", file_type)
+                file_info = bot.get_file(msg_type[-1].file_id)
+            case "sticker":
+                file_info = bot.get_file(msg_type.file_id)
+                if msg_type.is_animated:
+                    new_file = fbc.new_file(f"sticker_{time.asctime()}.tgs", file_type)
+                elif msg_type.is_video:
+                    new_file = fbc.new_file(f"sticker_{time.asctime()}.webm", file_type)
+                else:
+                    new_file = fbc.new_file(f"sticker_{time.asctime()}.webp", file_type)
             case _:
                 new_file = fbc.new_file(msg_type.file_name, file_type)
+                file_info = bot.get_file(msg_type.file_id)
+
+        downloaded_file = bot.download_file(file_info.file_path)
         src = f"user_files/{new_file[0]}"
         with open(src, 'wb') as file:
             file.write(downloaded_file)
         bot.reply_to(message, f"{tmsg.FILE_UPLOADED}: {new_file[1]}")
+
     except Exception as e:
         bot.reply_to(message, tmsg.FILE_NOT_UPLOADED)
         if dbc.level() == 2:  # only for admin

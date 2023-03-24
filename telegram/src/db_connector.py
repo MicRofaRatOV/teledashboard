@@ -403,15 +403,16 @@ class FileConnection(Connection):
 
     def new_file(self, file_name, file_type):
         key = rgen.generate_md5_str()
-        if not self.get_path_to_file(file_name):
+        fsn = cas.file_safe_name(file_name)
+        if not self.get_path_to_file(fsn):
             # if user dont have two or comre files with same names
             # yeas, my English B)
             self.insert(
                 table="file",
                 column_name="key, owner, status, name, load_time, deletion_time, file_type",
-                values=f"'{key}', {self._uid}, 0, '{file_name}', {itime()}, -1, '{file_type}'"
+                values=f"'{key}', {self._uid}, 0, '{fsn}', {itime()}, -1, '{file_type}'"
             )
-            return key, file_name
+            return key, fsn
         else:
             x = 0
             while x < sinfo.MAX_EPONYMOUS_FILES:

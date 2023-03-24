@@ -14,3 +14,13 @@ PREMIUM_CHANGE_TIME = 0.0208
 # Super link
 MAX_SLINK_LENGTH = 32
 MIN_SLINK_LENGTH = 4
+
+# Symbols
+SLINK_SYMBOLS = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM0123456789_"
+FILE_SYMBOLS = """qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM0123456789_.,%#@!№;&()+-=~\
+йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ"""
+
+# Megabytes
+USER_MEGABYTES = 15
+PREMIUM_MEGABYTES = 150
+ADMINISTRATOR_MEGABYTES = 7777
