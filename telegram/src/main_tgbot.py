@@ -138,7 +138,7 @@ def premium(message):
 
 
 # AUDIO
-@bot.message_handler(content_types=["audio", "photo", 'voice', 'video', 'sticker'])
+@bot.message_handler(content_types=["audio", "photo", "voice", "video", "sticker", "video_note"])
 def handle_docs_audio(message):
     dbc = DBConnection(message.from_user.id)
     fbc = FileConnection(message.from_user.id)
@@ -152,6 +152,7 @@ def handle_docs_audio(message):
         match file_type:
             case "voice":
                 new_file = fbc.new_file(f"voice_{time.asctime()}.ogg", file_type)
+                file_info = bot.get_file(msg_type.file_id)
             case "photo":
                 new_file = fbc.new_file(f"photo_{time.asctime()}.jpg", file_type)
                 file_info = bot.get_file(msg_type[-1].file_id)
@@ -163,6 +164,9 @@ def handle_docs_audio(message):
                     new_file = fbc.new_file(f"sticker_{time.asctime()}.webm", file_type)
                 else:
                     new_file = fbc.new_file(f"sticker_{time.asctime()}.webp", file_type)
+            case "video_note":
+                new_file = fbc.new_file(f"videonote_{time.asctime()}.mp4", file_type)
+                file_info = bot.get_file(msg_type.file_id)
             case _:
                 new_file = fbc.new_file(msg_type.file_name, file_type)
                 file_info = bot.get_file(msg_type.file_id)
@@ -250,6 +254,7 @@ def unban(message):
 
 @bot.message_handler(func=lambda message: True)
 def all_messages(message):
+    print(message)
     match message.text:
         case tmsg.PROFILE:    profile(message)
         case tmsg.GET_LINK:   link(message)

@@ -24,6 +24,8 @@ def get_msg_type(file_type, message, bot):
             msg_type = message.video
         case "sticker":
             msg_type = message.sticker
+        case "video_note":
+            msg_type = message.video_note
         case _:
             bot.send_message(message.from_user.id, tmsg.UNKNOWN_FILE_TYPE)
     return msg_type
