@@ -157,6 +157,7 @@ def premium(message):
 # AUDIO
 @bot.message_handler(content_types=["audio", "photo", "voice", "video", "sticker", "video_note"])
 def handle_docs_audio(message):
+    bot.send_message(message.from_user.id, tmsg.FLOAD_TRY)
     dbc = DBConnection(message.from_user.id)
     fbc = FileConnection(message.from_user.id)
     file_type = message.content_type
@@ -185,17 +186,21 @@ def handle_docs_audio(message):
             case "sticker":
                 file_info = bot.get_file(msg_type.file_id)
                 if msg_type.is_animated:
-                    new_file = fbc.new_file(f"sticker_{time.asctime()}.tgs", file_type, fsize, lvl)
+                    new_file = fbc.new_file(f"sticker_{time.asctime()}.tgs", f"{file_type}_tgs", fsize, lvl)
                 elif msg_type.is_video:
-                    new_file = fbc.new_file(f"sticker_{time.asctime()}.webm", file_type, fsize, lvl)
+                    new_file = fbc.new_file(f"sticker_{time.asctime()}.webm", f"{file_type}_webm", fsize, lvl)
                 else:
-                    new_file = fbc.new_file(f"sticker_{time.asctime()}.webp", file_type, fsize, lvl)
+                    new_file = fbc.new_file(f"sticker_{time.asctime()}.webp", f"{file_type}_webp", fsize, lvl)
             case "video_note":
                 new_file = fbc.new_file(f"videonote_{time.asctime()}.mp4", file_type, fsize, lvl)
                 file_info = bot.get_file(msg_type.file_id)
             case _:
                 new_file = fbc.new_file(msg_type.file_name, file_type, fsize, lvl)
                 file_info = bot.get_file(msg_type.file_id)
+
+        if len(new_file) > 2:
+            bot.send_message(message.from_user.id, f"{tmsg.FLOAD_DELAY} {new_file[2]} {tmsg.SECONDS}")
+            return
 
         if new_file[0] is None:
             bot.send_message(message.from_user.id, tmsg.NO_SPACE)
@@ -328,7 +333,6 @@ def all_messages(message):
                 except ValueError:
                     bot.send_message(message.from_user.id, tmsg.ICORRECT_NUMBER)
                     return
-                print(1)
                 bot.send_message(message.from_user.id, tmsg.ICORRECT_NUMBER)
         return
 

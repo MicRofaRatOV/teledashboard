@@ -400,6 +400,22 @@ class FileConnection(Connection):
             list_of_names.append(self.select("file", "name", f"key='{x}'").fetchall()[0][0])
         return list_of_names
 
+    def can_load_new_file(self, lvl):
+        min_delta = 0
+        match lvl:
+            case 0:
+                min_delta = sinfo.USER_LTIME
+            case 1:
+                min_delta = sinfo.PREMIUM_LTIME
+            case 2:
+                min_delta = sinfo.ADMINISTRATOR_LTIME
+        last_load_time = self.select("user", "file_load_time", f"telegram={self._tg_id}").fetchall()[0][0]
+        now = itime()
+        if now - last_load_time >= min_delta:
+            return True, 0
+        else:
+            return False, min_delta - (now - last_load_time)
+
     def get_file_name(self, key):
         if self.is_key_exist(key):
             return self.select("file", "name", f"key='{key}'").fetchall()[0][0]
@@ -482,16 +498,22 @@ class FileConnection(Connection):
             self.update("user", "mb_traffic", str(now+mb), f"id={self._uid}")
 
     def new_file(self, file_name, file_type, file_size=0.1, lvl=0):
+        can_list = self.can_load_new_file(lvl)
+        if can_list[0]:
+            pass
+        else:
+            return None, None, can_list[1]
         key = rgen.generate_md5_str()
         fsn = cas.file_safe_name(file_name)
         if self.add_mb_total(file_size, lvl):
             return None, None
+        self.update("user", "file_load_time", itime(), f"telegram={self._tg_id}")
         if not self.get_path_to_file(fsn):
             # if user dont have two or comre files with same names
             # yeas, my English B)
             self.insert(
                 table="file",
-                column_name="key, owner, status, name, load_time, deletion_time, file_type, mb_size",
+                column_name="key, owner, status, name, load_time, kill_time, file_type, mb_size",
                 values=f"'{key}', {self._uid}, 0, '{fsn}', {itime()}, -1, '{file_type}', {file_size}"
             )
             return key, fsn
@@ -513,7 +535,7 @@ class FileConnection(Connection):
                 x += 1
             self.insert(
                 table="file",
-                column_name="key, owner, status, name, load_time, deletion_time, file_type, mb_size",
+                column_name="key, owner, status, name, load_time, kill_time, file_type, mb_size",
                 values=f"'{key}', {self._uid}, 0, '{new_file_name}', {itime()}, -1, '{file_type}', {file_size}"
             )
             return key, new_file_name
