@@ -150,7 +150,7 @@ def premium(message):
         bot.send_message(message.from_user.id, tmsg.YOU_HAVE_PREMIUM, parse_mode="MARKDOWN")
 
 
-# TODO: /history fot premium
+# TODO: /history for premium
 
 
 # AUDIO

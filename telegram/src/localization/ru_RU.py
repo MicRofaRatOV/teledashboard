@@ -39,7 +39,6 @@ SECONDS = "сек"
 # COMMANDS
 # /start # TODO: remove dev mode
 NEW_USER = """\
-BOT WORKING IN DEV MODE
 Вы зарегистрированы в системе 👌
 
 Справка по эксплуатации - /help\
