@@ -1,9 +1,8 @@
 /venv/
 /.idea/
 user.db
-/web/src/html/pyscript/
-/telegram/src/user_files/*
-!/telegram/src/user_files/.deleted/
-/telegram/src/user_files/.deleted/*
-/telegram/src/telegram_token.py
+web.db
+/src/php_root/user_files/*
+/src/.deleted/*
+/src/telegram/telegram_token.py
 /project
