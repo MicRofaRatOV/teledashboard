@@ -516,7 +516,6 @@ class FileConnection(Connection):
                 column_name="key, owner, status, name, load_time, kill_time, file_type, mb_size",
                 values=f"'{key}', {self._uid}, 0, '{fsn}', {itime()}, -1, '{file_type}', {file_size}"
             )
-            self.select_file(key)
             return key, fsn
         else:
             x = 0
@@ -539,7 +538,6 @@ class FileConnection(Connection):
                 column_name="key, owner, status, name, load_time, kill_time, file_type, mb_size",
                 values=f"'{key}', {self._uid}, 0, '{new_file_name}', {itime()}, -1, '{file_type}', {file_size}"
             )
-            self.select_file(key)
             return key, new_file_name
 
     def delete_file(self, key):

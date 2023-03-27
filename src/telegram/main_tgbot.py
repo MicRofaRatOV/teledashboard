@@ -209,6 +209,7 @@ def handle_docs_audio(message):
         src = f"{sinfo.PATH_TO_FILES}{new_file[0]}"
         with open(src, 'wb') as file:
             file.write(downloaded_file)
+        fbc.select_file(new_file[0])
         bot.reply_to(message, f"{tmsg.FILE_UPLOADED}: {new_file[1]}")
 
     except Exception as e:
