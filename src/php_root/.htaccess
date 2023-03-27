@@ -1,0 +1,3 @@
+<Directory /TG/>
+    deny from all
+</Directory>

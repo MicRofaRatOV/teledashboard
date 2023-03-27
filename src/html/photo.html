@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title> PICTURE </title>
+    <style>
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body>
+
+<script>
+    setInterval(function() {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/get_sel_file.php", true);
+        xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xhr.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                const imgEl = document.getElementById('im');
+                imgEl.src = '/telegram/user_files/'+this.responseText;
+            }
+        };
+        xhr.send("link="+window.location.pathname);
+    }, 5000);
+</script>
+
+<div style="text-align:center;">
+    <img id="im" src="/telegram/user_files/<?php echo $file; ?>" alt="Picture" width="500">
+</div>
+</body>
+</html>
