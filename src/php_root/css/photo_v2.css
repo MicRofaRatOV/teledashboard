@@ -1,0 +1,37 @@
+* {
+    box-sizing: border-box;
+}
+
+/* I NEED FUK*** WEB DESIGNER I HATE CSS */
+
+html, body {
+    height: 100%;
+    width: 100%;
+}
+
+body {
+    margin: 0;
+    display: flex;
+    justify-content: center;
+}
+
+.im {
+    max-width: 100%;
+    max-height: 100%;
+    text-align: center;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+}
+
+.box {
+    display: flex;
+    max-width: 100%;
+    max-height: 100%;
+
+    height: auto;
+    width: auto;
+    vertical-align: middle;
+
+    background: white;
+}

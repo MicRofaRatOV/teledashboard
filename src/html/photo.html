@@ -2,46 +2,33 @@
 <html>
 <head>
     <title> PICTURE </title>
-    <style>
-        html, body {
-            height: 100%;
+    <link type="image/x-icon" rel="shortcut icon" href="/img/favicon.ico">
+    <link type="image/png" sizes="16x16" rel="icon" href="/img/favicon-16x16.png">
+    <link type="image/png" sizes="32x32" rel="icon" href="/img/favicon-32x32.png">
+    <link rel="stylesheet" href="/css/photo_v2.css">
+    <!--style>
+        .background {
+            background-image: url(/user_files/<?php echo $file; ?>);
+            backdrop-filter: blur(20px) saturate(120%) contrast(200%);
+            background-position: bottom;
+            background-repeat: no-repeat;
+            background-size: cover;
+            height: 100vh;
+            width: 100%;
         }
-
-        body {
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        img {
-            max-width: 100%;
-            max-height: 100%;
-            width: auto;
-            height: auto;
-            object-fit: contain;
-        }
-    </style>
+    </style-->
 </head>
 <body>
-
 <script>
-    setInterval(function() {
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", "/get_sel_file.php", true);
-        xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-        xhr.onreadystatechange = function() {
-            if (this.readyState == 4 && this.status == 200) {
-                const imgEl = document.getElementById('im');
-                imgEl.src = '/telegram/user_files/'+this.responseText;
-            }
-        };
-        xhr.send("link="+window.location.pathname);
-    }, 5000);
+    let previous_file = '<?php echo $file; ?>';
+    let previous_type = '<?php echo $type; ?>';
 </script>
+<script type="text/javascript" src="/js/changer.js"></script>
 
-<div style="text-align:center;">
-    <img id="im" src="/telegram/user_files/<?php echo $file; ?>" alt="Picture" width="500">
+<div class="box">
+    <img class="im" id="interactiveImage" src="/user_files/<?php echo $file; ?>" alt="<?php echo BROWSER_CANT_OPEN_FILE . ": " . get_page_type($link); ?>">
+
 </div>
+
 </body>
 </html>

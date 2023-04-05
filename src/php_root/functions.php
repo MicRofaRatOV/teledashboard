@@ -1,8 +1,10 @@
 <?php
 
+require_once 'vars.php';
+
 function main_page(): void
 {
-    $db = new SQLite3(__DIR__."/telegram/db/web.db");
+    $db = new SQLite3(__DIR__.DB_PATH."web.db");
     $result = $db->query("SELECT * from stat LIMIT 1");
     $row = $result->fetchArray(SQLITE3_ASSOC);
     $db->close();
@@ -16,14 +18,14 @@ function main_page(): void
 
 function get_page_type($link): string
 {
-    $db = new SQLite3(__DIR__ . "/telegram/db/user.db");
+    $db = new SQLite3(__DIR__.DB_PATH."user.db");
     try
     {
         $key = get_selected_file($link);
         $result = $db->query("SELECT file_type from file WHERE status=0 AND key='" . $key . "'");
         $row = $result->fetchArray(SQLITE3_NUM)[0] ??= "";
         $db->close();
-        return $row;
+        return $row ?? "";
     }
     catch (Exception)
     {
@@ -34,7 +36,7 @@ function get_page_type($link): string
 
 function get_selected_file($link): string
 {
-    $db = new SQLite3(__DIR__."/telegram/db/user.db");
+    $db = new SQLite3(__DIR__.DB_PATH."user.db");
     try {
         $result = $db->query("SELECT selected_file from user WHERE link='" . $link . "'" . " OR " . "super_link='" . $link . "'");
         $row = $result->fetchArray(SQLITE3_NUM)[0];
@@ -46,4 +48,14 @@ function get_selected_file($link): string
         $db->close();
         return "";
     }
+}
+
+function normalize_link($link): string
+{
+    if ($link[-1] == "/"){
+        # removing last slash
+        $link = substr($link,0, -1);
+    }
+    # removing first slash
+    return substr($link,-(strlen($link)-1), strlen($link)-1);
 }
