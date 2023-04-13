@@ -1,4 +1,4 @@
-from server_info import SLINK_SYMBOLS, FILE_SYMBOLS
+from server_info import SLINK_SYMBOLS, FILE_SYMBOLS, MAX_FILE_NAME_LENGTH
 
 
 def check_slink(slink):
@@ -7,6 +7,8 @@ def check_slink(slink):
 
 
 def file_safe_name(file_name):
+    if len(file_name) > MAX_FILE_NAME_LENGTH:
+        file_name = file_name[:32]
     out = ""
     for i in file_name:
         if i in FILE_SYMBOLS:

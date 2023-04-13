@@ -398,6 +398,7 @@ class FileConnection(Connection):
             list_of_files.append(x[0])
         for x in list_of_files:
             list_of_names.append(self.select("file", "name", f"key='{x}'").fetchall()[0][0])
+        self.used_space(self._uid)
         return list_of_names
 
     def can_load_new_file(self, lvl):
@@ -471,6 +472,11 @@ class FileConnection(Connection):
         self.delete_file(flist[res[0]])
         return 0
 
+    def file_count(self, uid=-1):
+        if uid == -1:
+            uid = self._uid
+        return len(self.select("file", "status", f"status=0 AND owner={uid}").fetchall())
+
     def add_mb_total(self, mb, lvl):
         """
         0 - succed;
@@ -497,6 +503,16 @@ class FileConnection(Connection):
             now = self.select("user", "mb_traffic", f"id={self._uid}").fetchall()[0][0]
             self.update("user", "mb_traffic", str(now+mb), f"id={self._uid}")
 
+    def rename_file(self, key, new_name):
+        """
+        0 - succed;
+        1 - error.
+        """
+        if self.is_key_exist(key):
+            self.update("file", "name", f"'{new_name}'", f"key='{key}'")
+            return 0
+        return 1
+
     def new_file(self, file_name, file_type, file_size=0.1, lvl=0):
         can_list = self.can_load_new_file(lvl)
         if can_list[0]:
@@ -508,6 +524,15 @@ class FileConnection(Connection):
         if self.add_mb_total(file_size, lvl):
             return None, None
         self.update("user", "file_load_time", itime(), f"telegram={self._tg_id}")
+        match lvl:
+            case 0:
+                max_count = sinfo.USER_FILE_COUNT
+            case 1:
+                max_count = sinfo.PREMIUM_FILE_COUNT
+            case 2:
+                max_count = sinfo.ADMINISTRATOR_FILE_COUNT
+        if self.file_count() > max_count:
+            [self.remove_oldest_file() for i in range(self.file_count() - max_count + 1)]
         if not self.get_path_to_file(fsn):
             # if user dont have two or comre files with same names
             # yeas, my English B)

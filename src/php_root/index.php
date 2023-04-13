@@ -4,6 +4,7 @@ error_reporting(E_ERROR | E_PARSE);
 
 require "functions.php";
 require "msg.php";
+require "reserved_names.php";
 
 $uri = $_SERVER['REQUEST_URI'];
 
@@ -20,5 +21,28 @@ if ($uri == "/" || $uri == "/index.php" || $uri == "/index.php/"){
     $link = substr($uri,-(strlen($uri)-1), strlen($uri)-1);
     $type = get_page_type($link);
     $file = get_selected_file($link);
-    include '../html/photo.html';
+
+    if (in_array($link, R_NAMES)) {
+        echo "123";
+        // TODO: check reserved link
+    }
+
+    switch ($type) {
+        case "audio":
+        case "voice":
+            include '../html/audio.html';
+            break;
+        case "photo":
+        case "sticker_webp":
+            include '../html/photo.html';
+            break;
+        case "video":
+        case "video_note":
+        case "sticker_webm":
+            include '../html/video.html';
+            break;
+        default:
+            include '../html/unsupported_type.html';
+            break;
+    }
 }

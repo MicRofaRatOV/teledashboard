@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title> UNSUPPORTED TYPE </title>
+</head>
+<body>
+
+<div align="center">
+    <p>🌍 Browser can't open file: <?php echo $type; ?></p><br>
+    <p>But you can <a id="downloadElement" href="/user_files/<?php echo $file; ?>" download="">DOWNLOAD</a> this file</p>
+</div>
+
+<script>
+    let previous_file = '<?php echo $file; ?>';
+    let previous_type = '<?php echo $type; ?>';
+</script>
+<script type="text/javascript" src="/js/unsupported_type.js"></script>
+
+</body>
+</html>

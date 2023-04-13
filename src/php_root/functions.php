@@ -57,5 +57,5 @@ function normalize_link($link): string
         $link = substr($link,0, -1);
     }
     # removing first slash
-    return substr($link,-(strlen($link)-1), strlen($link)-1);
+    return substr($link, -(strlen($link)-1), strlen($link)-1);
 }

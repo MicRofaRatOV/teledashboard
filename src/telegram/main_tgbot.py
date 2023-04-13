@@ -134,18 +134,21 @@ def profile(message):
                        f" {tmsg.SPACE_USED}: {tmsg.disc(percent)} {math.ceil(dbc.mb_total())}" + \
                        f" из {tmsg.megabytes(lvl)} Мб\n {tmsg.ID}: {dbc.get_id()}" + fmsg
     bot.send_message(message.from_user.id, combined_message, reply_markup=keyboard())
+    print(fbc.file_count())
 
 
 @bot.message_handler(commands=["select"])
 def select(message):
     bot.send_message(message.from_user.id, tmsg.TO_SELECT_FILE, parse_mode="MARKDOWN")
 
+# TODO: def search_file(), history(), rename_file(), remove_file()
+
 
 @bot.message_handler(commands=["premium"])
 def premium(message):
     dbc = DBConnection(message.from_user.id)
     if dbc.level() == 0:
-        bot.send_message(message.from_user.id, tmsg.YOU_CAN_BUY_PREMUIM)
+        bot.send_message(message.from_user.id, tmsg.YOU_CAN_BUY_PREMUIM, parse_mode="MARKDOWN")
     else:
         bot.send_message(message.from_user.id, tmsg.YOU_HAVE_PREMIUM, parse_mode="MARKDOWN")
 
@@ -155,7 +158,7 @@ def premium(message):
 
 # AUDIO
 @bot.message_handler(content_types=["audio", "photo", "voice", "video", "sticker", "video_note"])
-def handle_docs_audio(message):
+def handle_all_files(message):
     bot.send_message(message.from_user.id, tmsg.FLOAD_TRY)
     dbc = DBConnection(message.from_user.id)
     fbc = FileConnection(message.from_user.id)
@@ -170,14 +173,14 @@ def handle_docs_audio(message):
     if fsize > megabytes(lvl):
         bot.send_message(message.from_user.id, tmsg.NO_SPACE)
         return
-
-    if msg_type == "defalut":
-        return  # impossible ???
-
+    # TODO: добавлять икноку (эмодзи) в начале имени
     try:
         match file_type:
             case "voice":
                 new_file = fbc.new_file(f"voice_{time.asctime()}.ogg", file_type, fsize, lvl)
+                file_info = bot.get_file(msg_type.file_id)
+            case "audio":
+                new_file = fbc.new_file(cas.file_safe_name(msg_type.file_name), file_type, fsize, lvl)
                 file_info = bot.get_file(msg_type.file_id)
             case "photo":
                 new_file = fbc.new_file(f"photo_{time.asctime()}.jpg", file_type, fsize, lvl)
@@ -190,6 +193,9 @@ def handle_docs_audio(message):
                     new_file = fbc.new_file(f"sticker_{time.asctime()}.webm", f"{file_type}_webm", fsize, lvl)
                 else:
                     new_file = fbc.new_file(f"sticker_{time.asctime()}.webp", f"{file_type}_webp", fsize, lvl)
+            case "video":
+                new_file = fbc.new_file(f"video_{time.asctime()}.mp4", file_type, fsize, lvl)
+                file_info = bot.get_file(msg_type.file_id)
             case "video_note":
                 new_file = fbc.new_file(f"videonote_{time.asctime()}.mp4", file_type, fsize, lvl)
                 file_info = bot.get_file(msg_type.file_id)
@@ -205,12 +211,20 @@ def handle_docs_audio(message):
             bot.send_message(message.from_user.id, tmsg.NO_SPACE)
             return
 
+        new_file_name = new_file[1]
+
+        if message.caption is not None:
+            # if renamed
+            if not fbc.rename_file(new_file[0], cas.file_safe_name(message.caption)):
+                new_file_name = cas.file_safe_name(message.caption)
+
+
         downloaded_file = bot.download_file(file_info.file_path)
         src = f"{sinfo.PATH_TO_FILES}{new_file[0]}"
         with open(src, 'wb') as file:
             file.write(downloaded_file)
         fbc.select_file(new_file[0])
-        bot.reply_to(message, f"{tmsg.FILE_UPLOADED}: {new_file[1]}")
+        bot.reply_to(message, f"{tmsg.FILE_UPLOADED}: {new_file_name}")
 
     except Exception as e:
         bot.reply_to(message, tmsg.FILE_NOT_UPLOADED)
