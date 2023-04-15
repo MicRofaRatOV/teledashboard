@@ -27,9 +27,15 @@ if ($uri == "/" || $uri == "/index.php" || $uri == "/index.php/"){
             case "rp":
                 include '../html/report.html';
                 break;
+            default:
+                include '../html/reserved_page.html';
+                break;
         }
     } else {
         switch ($type) {
+            case "":
+                include '../html/free_page.html';
+                break;
             case "audio":
             case "voice":
                 include '../html/audio.html';

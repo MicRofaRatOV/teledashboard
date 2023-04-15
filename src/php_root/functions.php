@@ -38,7 +38,7 @@ function get_selected_file($link): string
 {
     $db = new SQLite3(__DIR__.DB_PATH."user.db");
     try {
-        $result = $db->query("SELECT selected_file from user WHERE link='" . $link . "'" . " OR " . "super_link='" . $link . "'");
+        $result = $db->query("SELECT selected_file from user WHERE (link='" . $link . "'" . " OR " . "super_link='" . $link . "') AND activate_link=1");
         $row = $result->fetchArray(SQLITE3_NUM)[0];
         $db->close();
         return $row ?? "";
