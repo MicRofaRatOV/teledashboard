@@ -216,6 +216,14 @@ class DBConnection(Connection):
         else:
             return True
 
+    def is_link_exist(self, link):
+        check_slink = self.select("user", "link", f"link='{link}'").fetchall()
+        # DO NOT CHANGE == TO is !!!
+        if check_slink == []:
+            return False
+        else:
+            return True
+
     def change_slink(self, new):
         """
         0 - successful change;
@@ -233,7 +241,7 @@ class DBConnection(Connection):
             return 4
         if not(len(new) >= sinfo.MIN_SLINK_LENGTH or self.level() == 2):
             return 5
-        if self.is_slink_exist(new):
+        if self.is_slink_exist(new) or self.is_link_exist(new):
             return 1
         else:
             self.update("user", "super_link", f"'{new}'", f"telegram={self._tg_id}")
@@ -272,13 +280,22 @@ class DBConnection(Connection):
                     values=f"""'{self._md5_link}', 0, {itime()}, 0.0, {self._tg_id}, 0, 'My Page', 0.0, 
                                0, {itime()}, 0, '{self._md5_link}'""")
 
+    def is_banned(self, uid=-1):
+        if uid == -1:
+            uid = self.get_id()
+        tg_id = self._tg_id
+        return bool(self.select("user", "ban", f"id={uid}").fetchall()[0][0])
+
     # ADMINISTARATOR FUNCTIONS
     def ban(self, db_id):
         """
         0 - user not exist;
         1 - already banned;
-        2 - user is successfully BANNED.
+        2 - user is successfully BANNED;
+        3 - you dont have permissions.
         """
+        if self.level() != 2:
+            return 3
         if self.not_exist_id(db_id):
             return 0
         if self.select("user", "ban", f"id={db_id}").fetchall()[0][0] == 1:
@@ -292,6 +309,8 @@ class DBConnection(Connection):
         1 - user is successfully unbanned;
         2 - already unbanned.
         """
+        if self.level() != 2:
+            return 3
         if self.not_exist_id(db_id):
             return 0
         if self.select("user", "ban", f"id={db_id}").fetchall()[0][0] == 0:

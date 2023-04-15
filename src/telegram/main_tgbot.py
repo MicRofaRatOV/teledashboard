@@ -264,11 +264,11 @@ def ban(message):
 
     match dbc.ban(uid):
         case 0:
-            bot.send_message(message.from_user.id, tmsg.NOT_BANNED)
+            bot.send_message(message.from_user.id, tmsg.NOT_BANNED, parse_mode="MARKDOWN")
         case 1:
-            bot.send_message(message.from_user.id, tmsg.BANNED + f" {uid}")
+            bot.send_message(message.from_user.id, tmsg.BANNED + f" {uid}", parse_mode="MARKDOWN")
         case 2:
-            bot.send_message(message.from_user.id, tmsg.ALREADY_BANNED + f" {uid}")
+            bot.send_message(message.from_user.id, tmsg.ALREADY_BANNED + f" {uid}", parse_mode="MARKDOWN")
 
 
 @bot.message_handler(commands=["unban"])
@@ -288,12 +288,14 @@ def unban(message):
 
     match dbc.unban(db_id=uid):
         case 0:
-            bot.send_message(message.from_user.id, tmsg.NOT_BANNED)
+            bot.send_message(message.from_user.id, tmsg.NOT_BANNED, parse_mode="MARKDOWN")
         case 1:
-            bot.send_message(message.from_user.id, tmsg.UNBANNED + f" {uid}")
+            bot.send_message(message.from_user.id, tmsg.UNBANNED + f" {uid}", parse_mode="MARKDOWN")
         case 2:
-            bot.send_message(message.from_user.id, tmsg.ALREADY_UNBANNED + f" {uid}")
+            bot.send_message(message.from_user.id, tmsg.ALREADY_UNBANNED + f" {uid}", parse_mode="MARKDOWN")
     return 0
+
+# TODO: add uid info command
 
 
 @bot.message_handler(func=lambda message: True)
