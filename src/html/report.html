@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporting page</title>
+    <link rel="stylesheet" type="text/css" href="/css/main_page.css">
+</head>
+<body>
+<style>
+    .input-element{
+        font-size: 14px;
+        width: 256px;
+    }
+</style>
+
+<div align="center">
+    <h1>Report content</h1>
+    <form action="/report.php" name="reportForm" method="post">
+        <p>Your name: <input class="input-element" type="text" value="Anonymous" name="name"></p>
+        <p>Your email (opt): <input class="input-element" type="text" value="" placeholder="user123@gmail.com" name="email"></p>
+        <p>Content link (or next columt): <input class="input-element" type="text" placeholder="qwerty" name="link"></p>
+        <p>File id (opt): <input class="input-element" type="text" placeholder="5750b8cf501e2f8aa02fef4749c39fd2" name="file"></p>
+        <p>Description (1024 symbols max): </p>
+        <textarea id="text" class="text" cols="86" rows ="20" name="text" maxlength="1024"></textarea>
+        <p><input type="submit" value="Report"></p>
+    </form>
+    <p><a href="/">Back to home page</a></p>
+</div>
+
+</body>
+</html>

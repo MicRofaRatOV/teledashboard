@@ -2,6 +2,7 @@
 /.idea/
 user.db
 web.db
+report.db
 /src/php_root/user_files/*
 /src/.deleted/*
 /src/telegram/telegram_token.py
