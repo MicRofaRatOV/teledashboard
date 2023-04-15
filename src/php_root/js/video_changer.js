@@ -1,5 +1,7 @@
 const supported_types = ["video", "video_note", "sticker_webm"];
 
+// add video_note resizing
+
 // video changer
 setInterval(function() {
     let xhr_link = new XMLHttpRequest();
