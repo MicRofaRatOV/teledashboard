@@ -463,8 +463,21 @@ class FileConnection(Connection):
             return self.select("file", "name", f"key='{key}'").fetchall()[0][0]
 
     def full_files_list(self):
-        # TODO: full files list
-        pass
+        list_of_files = []
+        list_of_status = []
+        raw_key = self.select("file", "key", f"owner={self._uid}").fetchall()
+        raw_status = self.select("file", "status", f"owner={self._uid}").fetchall()
+        if raw_key == []:
+            list_of_files = raw_key
+        else:
+            for x in raw_key:
+                list_of_files.append(x[0])
+        if raw_status == []:
+            list_of_status = raw_status
+        else:
+            for x in raw_status:
+                list_of_status.append(x[0])
+        return list_of_files, list_of_status
 
     def select_file(self, key):
         self.update("user", "selected_file", f"'{key}'", f"telegram={self._tg_id}")
@@ -492,6 +505,25 @@ class FileConnection(Connection):
         if key == "defalut": key = self.get_file_key(name)
         if self.is_key_exist(key):
             return self.select("file", "file_type", f"key='{key}'").fetchall()[0][0]
+
+    def remove_file_by_number(self, num, uid=-1):
+        """
+                0 - succed;
+                1 - no files;
+                2 - out of range
+                """
+        if uid == -1:
+            uid = self._uid
+        load_time = []
+        flist = self.files_list()
+        # DO NO CHANGE == TO is
+        if flist == []:
+            self.update("user", "mb_total", 0.0, f"id={uid}")
+            return 1
+        if num > len(flist) or num < 1:
+            return 2
+        self.delete_file(flist[num-1])
+        return 0
 
     def remove_oldest_file(self, uid=-1):
         """

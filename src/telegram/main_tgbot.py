@@ -28,7 +28,6 @@ bot = telebot.TeleBot(token)
 
 
 # TODO: добавить возможность интергировать в сайт
-# TODO: добавить запрет на использование бота забаненным пользователям
 
 
 # def file_write(message, file_type, fbc):
@@ -190,7 +189,6 @@ def handle_all_files(message):
     if fsize > megabytes(lvl):
         bot.send_message(message.from_user.id, tmsg.NO_SPACE)
         return
-    # TODO: добавлять икноку (эмодзи) в начале имени
     try:
         match file_type:
             case "voice":
@@ -381,6 +379,23 @@ def all_messages(message):
                     bot.send_message(message.from_user.id, tmsg.ICORRECT_NUMBER)
                     return
                 bot.send_message(message.from_user.id, tmsg.ICORRECT_NUMBER)
+            # Delete file by number # remove_file_by_number
+            case "del":
+                dbc = DBConnection(message.from_user.id)
+                if banned(bot, message, dbc):
+                    return
+                fbc = FileConnection(message.from_user.id)
+                try:
+                    status = fbc.remove_file_by_number(int(command[1]))
+                    match status:
+                        case 0:
+                            bot.send_message(message.from_user.id, tmsg.FILE_DELETED)
+                        case 1 | 2:
+                            bot.send_message(message.from_user.id, tmsg.FILE_NOT_FOUND)
+                except ValueError:
+                    bot.send_message(message.from_user.id, tmsg.ICORRECT_NUMBER)
+                    return
+
         return
 
     bot.send_message(message.from_user.id, tmsg.UNKNOWN_COMMAND, reply_markup=keyboard())
