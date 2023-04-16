@@ -46,12 +46,16 @@ bot = telebot.TeleBot(token)
 @bot.message_handler(commands=["link"])
 def link(message):
     dbc = DBConnection(message.from_user.id)
+    if banned(bot, message, dbc):
+        return
     bot.send_message(message.from_user.id, f"{tmsg.YOUR_LINK}: {sinfo.ADDRESS}{dbc.get_md5()}")
 
 
 @bot.message_handler(commands=["slink"])
 def slink(message):
     dbc = DBConnection(message.from_user.id)
+    if banned(bot, message, dbc):
+        return
     match dbc.level():
         case 0:
             bot.send_message(message.from_user.id, tmsg.YOU_CAN_BUY_SLINK, parse_mode="MARKDOWN")
@@ -85,6 +89,8 @@ def delete_slink(message):
 @bot.message_handler(commands=["switchlink"])
 def switchlink(message):
     dbc = DBConnection(message.from_user.id)
+    if banned(bot, message, dbc):
+        return
     switch = dbc.switch_link()
     match switch:
         case 0:
@@ -96,6 +102,8 @@ def switchlink(message):
 @bot.message_handler(commands=["editlink"])
 def editlink(message):
     dbc = DBConnection(message.from_user.id)
+    if banned(bot, message, dbc):
+        return
     text = tmsg.EDIT
     if dbc.level() != 0:
         text += f"\n\n{tmsg.EDIT_SLINK}"
@@ -105,6 +113,8 @@ def editlink(message):
 @bot.message_handler(commands=["newlink"])
 def newlink(message):
     dbc = DBConnection(message.from_user.id)
+    if banned(bot, message, dbc):
+        return
     time_to_update = dbc.new_link()
     if time_to_update == 0:
         bot.send_message(message.from_user.id, tmsg.LINK_UPDATED)
@@ -123,6 +133,9 @@ def profile(message):
     fbc = FileConnection(message.from_user.id)
     flist = fbc.file_names_list()
     fstr = ""
+    ban_word = ""
+    if dbc.is_banned():
+        ban_word = f" ({tmsg.BAN_WORD})"
     if len(flist) == 0:
         fmsg = ""
     else:
@@ -132,9 +145,8 @@ def profile(message):
     percent = math.ceil((dbc.mb_total() / tmsg.megabytes(lvl)) * 100)
     combined_message = f"{tmsg.YOUR_PROFILE}:\n\n {tmsg.LEVEL}: {tmsg.level(lvl)}\n" + \
                        f" {tmsg.SPACE_USED}: {tmsg.disc(percent)} {math.ceil(dbc.mb_total())}" + \
-                       f" из {tmsg.megabytes(lvl)} Мб\n {tmsg.ID}: {dbc.get_id()}" + fmsg
+                       f" из {tmsg.megabytes(lvl)} Мб\n {tmsg.ID}: {dbc.get_id()}{ban_word}" + fmsg
     bot.send_message(message.from_user.id, combined_message, reply_markup=keyboard())
-    print(fbc.file_count())
 
 
 @bot.message_handler(commands=["select"])
@@ -147,6 +159,8 @@ def select(message):
 @bot.message_handler(commands=["premium"])
 def premium(message):
     dbc = DBConnection(message.from_user.id)
+    if banned(bot, message, dbc):
+        return
     if dbc.level() == 0:
         bot.send_message(message.from_user.id, tmsg.YOU_CAN_BUY_PREMUIM, parse_mode="MARKDOWN")
     else:
@@ -161,6 +175,9 @@ def premium(message):
 def handle_all_files(message):
     bot.send_message(message.from_user.id, tmsg.FLOAD_TRY)
     dbc = DBConnection(message.from_user.id)
+    if banned(bot, message, dbc):
+        bot.reply_to(message, tmsg.FILE_NOT_UPLOADED)
+        return
     fbc = FileConnection(message.from_user.id)
     file_type = message.content_type
     msg_type = get_msg_type(file_type, message, bot)
@@ -218,7 +235,6 @@ def handle_all_files(message):
             if not fbc.rename_file(new_file[0], cas.file_safe_name(message.caption)):
                 new_file_name = cas.file_safe_name(message.caption)
 
-
         downloaded_file = bot.download_file(file_info.file_path)
         src = f"{sinfo.PATH_TO_FILES}{new_file[0]}"
         with open(src, 'wb') as file:
@@ -262,13 +278,23 @@ def ban(message):
         bot.send_message(message.from_user.id, tmsg.BAN_HELP)
         return 1
 
-    match dbc.ban(uid):
+    if len(command) > 2:
+        reason = ""
+        for i in range(len(command)-2):
+            reason += command[i+2]+" "
+        reason = reason[:-1]
+    else:
+        reason = "no reason"
+
+    match dbc.ban(uid, reason):
         case 0:
             bot.send_message(message.from_user.id, tmsg.NOT_BANNED, parse_mode="MARKDOWN")
         case 1:
             bot.send_message(message.from_user.id, tmsg.BANNED + f" {uid}", parse_mode="MARKDOWN")
         case 2:
             bot.send_message(message.from_user.id, tmsg.ALREADY_BANNED + f" {uid}", parse_mode="MARKDOWN")
+        case 4:
+            bot.send_message(message.from_user.id, tmsg.INCORRECT_REASON + f" {uid}", parse_mode="MARKDOWN")
 
 
 @bot.message_handler(commands=["unban"])
@@ -322,12 +348,17 @@ def all_messages(message):
             # Change super link
             case "sl":
                 dbc = DBConnection(message.from_user.id)
+                if banned(bot, message, dbc):
+                    return
                 if dbc.level() != 0:
                     sl_msg(command, message, dbc, bot, cas, sinfo)
                 else:
                     bot.send_message(message.from_user.id, tmsg.YOU_CAN_BUY_SLINK)
             # Select active file
             case "f":
+                dbc = DBConnection(message.from_user.id)
+                if banned(bot, message, dbc):
+                    return
                 fbc = FileConnection(message.from_user.id)
                 flist = fbc.file_names_list()
                 frawl = fbc.files_list()

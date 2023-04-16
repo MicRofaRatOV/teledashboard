@@ -7,5 +7,6 @@ const R_NAMES = array(
     "user_files",
     "css",
     "js",
-    "img"
+    "img",
+    "default"
 );

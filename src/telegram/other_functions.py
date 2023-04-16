@@ -66,3 +66,11 @@ def megabytes(lvl):
             return PREMIUM_MEGABYTES        # premium megabytes
         case 2:
             return ADMINISTRATOR_MEGABYTES  # administartor megabytes
+
+
+def banned(bot, message, dbc):
+    if dbc.is_banned():
+        bot.send_message(message.from_user.id, tmsg.YOU_ARE_BANNED)
+        return True
+    else:
+        return False

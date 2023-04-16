@@ -287,12 +287,13 @@ class DBConnection(Connection):
         return bool(self.select("user", "ban", f"id={uid}").fetchall()[0][0])
 
     # ADMINISTARATOR FUNCTIONS
-    def ban(self, db_id):
+    def ban(self, db_id, reason="no reason"):
         """
         0 - user not exist;
         1 - already banned;
         2 - user is successfully BANNED;
-        3 - you dont have permissions.
+        3 - you dont have permissions;
+        4 - incorrect reason.
         """
         if self.level() != 2:
             return 3
@@ -300,7 +301,28 @@ class DBConnection(Connection):
             return 0
         if self.select("user", "ban", f"id={db_id}").fetchall()[0][0] == 1:
             return 2
-        self.update("user", "ban", "1", f"id={db_id}")
+
+        backup = self.exec(
+            f""" SELECT * FROM user WHERE id={db_id} """
+        ).fetchall()[0]
+
+        backup = str(list(backup)).replace('None', 'NULL')[1:-1]
+
+        try:
+            ban_id = self.exec(
+                """SELECT ban_id FROM before_ban ORDER BY ban_id DESC LIMIT 1"""
+            ).fetchall()[0][0]+1
+        except sqlite3.OperationalError:
+            ban_id = 1
+
+        if reason.count("'") > 0:
+            return 4
+
+        self.exec(
+            f""" INSERT INTO before_ban VALUES ({ban_id}, {itime()}, '{reason}', {backup})"""
+        )
+
+        self.update("user", "ban, activate_link, super_link, link, level", "1, 0, NULL, 'defalut', 0", f"id={db_id}")
         return 1
 
     def unban(self, db_id):
@@ -315,7 +337,7 @@ class DBConnection(Connection):
             return 0
         if self.select("user", "ban", f"id={db_id}").fetchall()[0][0] == 0:
             return 2
-        self.update("user", "ban", "0", f"id={db_id}")
+        self.update("user", "ban, link", f"0, '{rgen.generate_md5_str()}'", f"id={db_id}")
         return 1
 
     # def user_deleted(self, uid):
