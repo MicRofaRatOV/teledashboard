@@ -27,6 +27,9 @@ if ($uri == "/" || $uri == "/index.php" || $uri == "/index.php/"){
             case "rp":
                 include '../html/report.html';
                 break;
+            case "wl":
+                include '../html/watch_link.html';
+                break;
             default:
                 include '../html/reserved_page.html';
                 break;

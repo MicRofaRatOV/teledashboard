@@ -10,19 +10,25 @@
   <link type="image/png" sizes="32x32" rel="icon" href="/img/favicon-32x32.png">
 </head>
 <body>
-<header>
-  <h1>📊 TeleDashBoard</h1>
-</header>
+<style>
+  .input-element {
+    font-size: 16px;
+    width: 488px;
+    text-align: center;
+  }
+</style>
+
 <main>
   <div class="cont">
-    <a href="https://t.me/tele_dash_board_bot"><img src="/img/tg.svg" alt="Telegram Bot"></a>
-    <p>Registered users: <?php echo $user_count; ?> | Files uploaded: <?php echo $file_count; ?> | Latest version: <?php echo $version; ?></p>
+    <h1>🔗 Enter link</h1><br>
+    <form action="/redir.php" method="get">
+      <input class="input-element" type="text" name="link" placeholder="Link: 5750b8cf501e2f8aa02fef4749c39fd2"> <br> <br>
+      <input class="big-button" type="submit" value="Watch link">
+    </form>
   </div>
-
 </main>
 <footer>
-  <p>Links: <a href="#">Watch Link</a> | <a href="rp">Report Content</a> | <a target="_blank" href="https://github.com/MicRofaRatOV/teledashboard">GitHub</a> | <a href="#">About</a></p>
-  <p>License: <a href="#">MIT License</a></p>
+  <p>Back to <a href="/">home page</a>
 </footer>
 </body>
 </html>

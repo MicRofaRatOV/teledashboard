@@ -85,3 +85,34 @@ footer a {
     color: #4285f4;
     text-decoration: none;
 }
+
+.big-button {
+    appearance: none;
+    border: 0;
+    border-radius: 5px;
+    background: #477ae5;
+    color: #fff;
+    padding: 8px 16px;
+    font-size: 16px;
+}
+
+.big-button:hover {
+    background: #1d49aa;
+}
+
+.big-button:focus {
+    outline: none;
+    box-shadow: 0 0 0 4px #cbd6ee;
+}
+
+.red-button {
+    background: #e54754;
+}
+
+.red-button:hover {
+    background: #aa1d1d;
+}
+
+.red-button:focus {
+    box-shadow: 0 0 0 4px #eecbcf;
+}

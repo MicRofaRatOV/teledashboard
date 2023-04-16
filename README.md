@@ -3,6 +3,8 @@
 ## Info
 An interactive online board for media playback in your browser, controlled by your telegram
 
+Main bot: [@tele_dash_board_bot] (RU) [site](https://teledashboard.mf47.ru/)
+
 ## Installation
 ### Preparation
 1. Move all files from **/src** folder to **/your/folder/name**
@@ -37,3 +39,4 @@ python 3.11 /your/folder/name/telegram/main_tgbot.py
 [DB Browser for SQLite]: <https://sqlitebrowser.org/dl/>
 [pip]: <https://pypi.org/project/pip/>
 [PHP]: <https://www.php.net/downloads.php>
+[@tele_dash_board_bot]: <https://t.me/tele_dash_board_bot>
