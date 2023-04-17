@@ -35,6 +35,30 @@ python3.11 /your/folder/name/telegram/main_tgbot.py
 - Install [PHP] on your PC or Server
 - Just mark /your/folder/name/**php\_root** as the root of your server, but not below this directory!
 
+## Built-in programs
+### kEditor
+Simple adminpanel key editor, requiring `colorama`. Used to generate and manage access keys for your adminpanel
+```sh
+# start kEditor
+python3.11 /your/folder/name/kEditor.py
+```
+
+## Starting server
+1. Run php server
+2. Run statistics updater
+```sh
+# Running stat updater
+python3.11 /your/folder/name/statistics.py
+```
+3. Run TelegramBot
+```sh
+# Running main telegram bot
+python3.11 /your/folder/name/telegram/main_tgbot.py
+```
+4. *OPTIONAL*. Run aminpanel key etditor to update access keys
+```sh
+python3.11 /your/folder/name/kEditor.py
+```
 ## License
 
 [MIT](https://github.com/MicRofaRatOV/teledashboard/blob/master/LICENSE)

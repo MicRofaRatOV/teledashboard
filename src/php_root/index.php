@@ -30,6 +30,9 @@ if ($uri == "/" || $uri == "/index.php" || $uri == "/index.php/"){
             case "wl":
                 include '../html/watch_link.html';
                 break;
+            case "ap":
+                include '../html/adminpanel.html';
+                break;
             default:
                 include '../html/reserved_page.html';
                 break;

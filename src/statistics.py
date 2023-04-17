@@ -5,7 +5,7 @@ import sqlite3
 
 # Settings
 DB_FOLDER = "./db/"
-UPDATE_TIME = 60  # seconds
+UPDATE_TIME = 60*5  # seconds
 
 
 def main():

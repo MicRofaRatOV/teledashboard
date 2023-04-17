@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Adminpanel</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" type="text/css" href="/css/main_page.css">
+  <link rel="stylesheet" type="text/css" href="/css/adminpanel.css">
+  <link type="image/x-icon" rel="shortcut icon" href="/img/favicon.ico">
+  <link type="image/png" sizes="16x16" rel="icon" href="/img/favicon-16x16.png">
+  <link type="image/png" sizes="32x32" rel="icon" href="/img/favicon-32x32.png">
+</head>
+<body>
+<style>
+  .input-element{
+    font-size: 14px;
+    width: 256px;
+  }
+</style>
+
+<div align="center">
+  <h1>Admin panel</h1>
+  <form action="/report.php" name="reportForm" method="post">
+    <p>Access key: <input class="input-element" type="password" name="passwd" placeholder="xxxxxxxx"></p>
+    <p>Command: <input class="input-element" type="text" name="command" placeholder="test"></p>
+    <textarea id="text" class="text" cols="52" rows ="5" name="text" maxlength="1024" placeholder="Arguments"></textarea>
+    <p><input class="big-button" type="submit" value="Send"></p>
+  </form>
+</div>
+
+</body>
+</html>
