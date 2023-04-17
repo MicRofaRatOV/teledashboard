@@ -89,6 +89,8 @@ Commands:
 {cl.Fore.GREEN}rmkey{cl.Style.RESET_ALL}\t[key1 key2 ...] - removes the key(s)
 {cl.Fore.GREEN}genkey{cl.Style.RESET_ALL}\t[number] - generates n key(s)
 {cl.Fore.YELLOW}rmall{cl.Style.RESET_ALL} - deleting all keys
+{cl.Fore.GREEN}exist{cl.Style.RESET_ALL}\t[key1 key2 ...] - check if key(s) exist
+{cl.Fore.CYAN}help{cl.Style.RESET_ALL} - shows this message\
 """)
 
 
@@ -158,6 +160,25 @@ def rm_all():
     print(f"{cl.Fore.YELLOW}All keys deleted{cl.Style.RESET_ALL}")
 
 
+def is_key_exist(cmd):
+    apc = APConnection()
+    if len(cmd) < 2:
+        print("Enter the keys!")
+        return
+    new = []
+    for k in range(len(cmd)-1):
+        new.append(cmd[k+1])
+    for k in new:
+        if check_key(k):
+            if apc.select("key", "key", f"key='{k}'").fetchall():
+                print(f"'{k}' -> {cl.Fore.GREEN}Key exist{cl.Style.RESET_ALL}")
+            else:
+                print(f"'{k}' -> {cl.Fore.RED}Key dosent exist{cl.Style.RESET_ALL}")
+
+        else:
+            print(f"'{k}' -> {cl.Fore.YELLOW}Incorrect key{cl.Style.RESET_ALL}")
+
+
 def main():
     cl.init()
     cl.just_fix_windows_console()
@@ -165,7 +186,9 @@ def main():
     print()
     try:
         while True:
-            cmd = input(cl.Fore.CYAN + "> " + cl.Style.RESET_ALL).split(" ")
+            cmd = input(cl.Fore.CYAN + "> " + cl.Style.RESET_ALL)
+            # removing double, triple, ... spaces
+            cmd = ' '.join(cmd.split()).split(" ")
             match cmd[0]:
                 case "watchkey":
                     watch_keys()
@@ -179,6 +202,8 @@ def main():
                     gen_key(cmd)
                 case "rmall":
                     rm_all()
+                case "exist":
+                    is_key_exist(cmd)
                 case "exit":
                     print(f"\n{cl.Fore.GREEN}Exit")
                     exit(0)
