@@ -17,14 +17,18 @@ TOKEN = "1111111111:to-kE_n"
 ```
 5. Configure /your/folder/name/telegram/**server\_info**.**py** file
 6. *OPTIONAL*. You can update actual version of your site in /your/folder/name/db/**web.db** using [DB Browser for SQLite]
+7. *OPTIONAL*. You can configure /your/folder/name/**statistics.db**
 
 ### Python
 1. Install [python 3.11]
-2. Install `pyTelegramBotAPI` (my testing version is 4.10.0) using [pip]
+2. Install `pyTelegramBotAPI` using [pip] (my testing version of pyTelegramBotAPI is 4.10.0)
+```sh
+python3.11 -m pip install pyTelegramBotAPI
+```
 3. *OPTIONAL*. You can change locale (defalut: ru\_RU) here: /your/folder/name/telegram/**messages**.**py** if your locale file exists here: /your/folder/name/telegram/**localization**/**xx\_XX**.**py**
 4. Run TelegramBot: 
 ```sh
-python 3.11 /your/folder/name/telegram/main_tgbot.py
+python3.11 /your/folder/name/telegram/main_tgbot.py
 ```
 
 ### PHP

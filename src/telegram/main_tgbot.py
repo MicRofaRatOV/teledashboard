@@ -148,11 +148,11 @@ def profile(message):
     bot.send_message(message.from_user.id, combined_message, reply_markup=keyboard())
 
 
-@bot.message_handler(commands=["select"])
+@bot.message_handler(commands=["select"])  # TODO: Change to file help
 def select(message):
     bot.send_message(message.from_user.id, tmsg.TO_SELECT_FILE, parse_mode="MARKDOWN")
 
-# TODO: def search_file(), history(), rename_file(), remove_file()
+# TODO: def search_file(), history(), rename_file()
 
 
 @bot.message_handler(commands=["premium"])

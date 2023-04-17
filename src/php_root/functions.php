@@ -4,14 +4,15 @@ require_once 'vars.php';
 
 function main_page(): void
 {
+    global $tdb_version;
     $db = new SQLite3(__DIR__.DB_PATH."web.db");
-    $result = $db->query("SELECT * from stat LIMIT 1");
+    $result = $db->query("SELECT * FROM stat ORDER BY time DESC LIMIT 1");
     $row = $result->fetchArray(SQLITE3_ASSOC);
     $db->close();
 
     $user_count = $row["user_count"];
     $file_count = $row["file_count"];
-    $version = $row["version"];
+    $version = $tdb_version;
 
     include '../html/main_page.html';
 }
@@ -38,7 +39,7 @@ function get_selected_file($link): string
 {
     $db = new SQLite3(__DIR__.DB_PATH."user.db");
     try {
-        $result = $db->query("SELECT selected_file from user WHERE (link='" . $link . "'" . " OR " . "super_link='" . $link . "') AND activate_link=1");
+        $result = $db->query("SELECT selected_file from user WHERE (link='" . $link . "'" . "  AND activate_link=1) OR " . "super_link='" . $link . "'");
         $row = $result->fetchArray(SQLITE3_NUM)[0];
         $db->close();
         return $row ?? "";
