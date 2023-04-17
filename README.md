@@ -21,9 +21,9 @@ TOKEN = "1111111111:to-kE_n"
 
 ### Python
 1. Install [python 3.11]
-2. Install `pyTelegramBotAPI` using [pip] (my testing version of pyTelegramBotAPI is 4.10.0)
+2. Install `pyTelegramBotAPI`, `colorama` using [pip] (my testing version of pyTelegramBotAPI is 4.10.0)
 ```sh
-python3.11 -m pip install pyTelegramBotAPI
+python3.11 -m pip install pyTelegramBotAPI colorama
 ```
 3. *OPTIONAL*. You can change locale (defalut: ru\_RU) here: /your/folder/name/telegram/**messages**.**py** if your locale file exists here: /your/folder/name/telegram/**localization**/**xx\_XX**.**py**
 4. Run TelegramBot: 
