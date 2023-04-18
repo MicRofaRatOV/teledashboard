@@ -290,8 +290,8 @@ class DBConnection(Connection):
     def ban(self, db_id, reason="no reason"):
         """
         0 - user not exist;
-        1 - already banned;
-        2 - user is successfully BANNED;
+        1 - user is successfully BANNED;
+        2 - already banned;
         3 - you dont have permissions;
         4 - incorrect reason.
         """
