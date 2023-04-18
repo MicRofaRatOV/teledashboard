@@ -144,8 +144,10 @@ def gen_key(cmd):
         n = int(cmd[1])
         if n < 1:
             print(f"{cl.Fore.RED}Must be{cl.Style.RESET_ALL} n > 0")
-        elif n > 256:
+            return
+        elif n > 128:
             print(f"{cl.Fore.RED}Must be{cl.Style.RESET_ALL} n < 256")
+            return
 
         for i in range(n):
             add_key([0, generate_key()])
