@@ -124,8 +124,9 @@ function ban_by_id($arg) {
         $arr = explode(" ", $arg);
 
         $id = $arr[0];
-
-        // TODO: check incorrect enter (like: 'banid one hihihi')
+        if (!is_int(to_int_or_null($id))){
+            return "<font color='#dc143c'>Incorrect argument:</font> '$id'<br>";
+        }
 
         if (count($arr) > 1) {
             $reason = "";
@@ -191,4 +192,84 @@ function ban_by_id($arg) {
         $db->close();
         return "<font color='#dc143c'>Not found</font>";
     }
+}
+
+function to_int_or_null($v){
+    if(is_int($v)) return $v;
+    if(is_float($v)) return $v === (float)(int)$v ? (int)$v : null;
+    if(is_numeric($v)) return to_int_or_null(+$v);
+    return null;
+}
+
+function unban_by_id($arg) {
+    $db = new SQLite3(__DIR__.DB_PATH."user.db");
+    $return_msg = "";
+    try {
+        $arr = explode(" ", $arg);
+        $arr_len = count($arr);
+
+        for ($i = 0; $i < $arr_len; $i++) {
+            if (is_int(to_int_or_null($arr[$i]))){
+                $id = $arr[$i];
+            } else {
+                $return_msg .= "<font color='#dc143c'>Incorrect argument:</font> '$arr[$i]'<br>";
+                continue;
+            }
+            $result = $db->query("SELECT ban FROM user WHERE id=$id")->fetchArray(SQLITE3_NUM)[0];
+            if ($result == "") {
+                $return_msg .= "<font color='#dc143c'>User not found: </font>'$id'<br>";
+            } else if ($result == 0) {
+                $return_msg .= "<font color='#b8860b'>User alredy unbanned: </font>'$id'<br>";
+            } else {
+                $db->query("UPDATE user SET ban=0 WHERE id=$id");
+                $return_msg .= "<font color='green'>User unbanned: </font>'$id'. To return user status and link: <font color='#008b8b'>'undostatlink $id'</font><br>";
+            }
+        }
+        $db->close();
+        return $return_msg;
+    }
+    catch (Exception) {
+        $db->close();
+        return "<font color='#dc143c'>Incorrect argument</font>";
+    }
+}
+
+function before_ban($arg) {
+    $arr = explode(" ", $arg);
+    if (!is_int(to_int_or_null($arr[0]))){
+        return "<font color='#dc143c'>Incorrect argument</font>";
+    } else {
+        $id = $arr[0];
+        if ($id < 1) {
+            return "<font color='#dc143c'>Incorrect argument</font>";
+        }
+    }
+    $db = new SQLite3(__DIR__.DB_PATH."user.db");
+    $result = $db->query("SELECT * FROM before_ban WHERE id=$id");
+
+    $count_id = $db->query("SELECT COUNT(id) FROM before_ban WHERE id=$id")->fetchArray(SQLITE3_NUM)[0];
+
+    $return_msg = "";
+
+    if ($count_id == 0) {
+        $return_msg .= "<font color='#b8860b'>There are no ban history</font><br>";
+    }
+
+    for ($i = 0; $i < $count_id; $i++) {
+        $row = $result->fetchArray(SQLITE3_ASSOC);
+        $return_msg .= "<font color='#008b8b'>Entry </font>".($i+1).":<br>";
+        foreach ($row as $key => $value) {
+            if (is_string($value)) {
+                $return_msg .= "<font color='#008b8b'>$key</font>='$value', ";
+            } else if (is_null($value)){
+                $return_msg .= "<font color='#1e90ff'>$key</font>=NULL, ";
+            } else {
+                $return_msg .= "<font color='green'>$key</font>=$value, ";
+            }
+        }
+        $return_msg = substr($return_msg, 0, -2);
+        $return_msg .= "<br>End<br>";
+    }
+    $db->close();
+    return $return_msg;
 }

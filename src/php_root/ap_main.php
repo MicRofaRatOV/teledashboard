@@ -33,6 +33,12 @@ if (check_key($key)){
         case "banid":
             $out .= ban_by_id($arg);
             break;
+        case "unbanid":
+            $out .= unban_by_id($arg);
+            break;
+        case "banhistory":
+            $out .= before_ban($arg);
+            break;
         default:
             $out .= "<font color='#b8860b'>Unknown command</font><br>Use '<font color='#008b8b'>help</font>' for more information<br>";
             break;
