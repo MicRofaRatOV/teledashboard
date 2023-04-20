@@ -39,6 +39,9 @@ if (check_key($key)){
         case "banhistory":
             $out .= before_ban($arg);
             break;
+        case "setlevel":
+            $out .= set_level($arg);
+            break;
         default:
             $out .= "<font color='#b8860b'>Unknown command</font><br>Use '<font color='#008b8b'>help</font>' for more information<br>";
             break;

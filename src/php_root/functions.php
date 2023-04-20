@@ -99,7 +99,7 @@ function get_ip() {
     }
 }
 
-function get_id_by_link($arg) {
+function get_id_by_link($arg): string {
     $db = new SQLite3(__DIR__.DB_PATH."user.db");
     try {
         $link = explode(" ", $arg)[0];
@@ -118,7 +118,7 @@ function get_id_by_link($arg) {
     }
 }
 
-function ban_by_id($arg) {
+function ban_by_id($arg): string {
     $db = new SQLite3(__DIR__.DB_PATH."user.db");
     try {
         $arr = explode(" ", $arg);
@@ -194,14 +194,14 @@ function ban_by_id($arg) {
     }
 }
 
-function to_int_or_null($v){
+function to_int_or_null($v): int|null {
     if(is_int($v)) return $v;
     if(is_float($v)) return $v === (float)(int)$v ? (int)$v : null;
     if(is_numeric($v)) return to_int_or_null(+$v);
     return null;
 }
 
-function unban_by_id($arg) {
+function unban_by_id($arg): string {
     $db = new SQLite3(__DIR__.DB_PATH."user.db");
     $return_msg = "";
     try {
@@ -234,7 +234,7 @@ function unban_by_id($arg) {
     }
 }
 
-function before_ban($arg) {
+function before_ban($arg): string {
     $arr = explode(" ", $arg);
     if (!is_int(to_int_or_null($arr[0]))){
         return "<font color='#dc143c'>Incorrect argument</font>";
@@ -269,6 +269,47 @@ function before_ban($arg) {
         }
         $return_msg = substr($return_msg, 0, -2);
         $return_msg .= "<br>End<br>";
+    }
+    $db->close();
+    return $return_msg;
+}
+
+function set_level($arg): string {
+    $arr = explode(" ", $arg);
+    $id_count = count($arr) - 1;
+    if ($id_count == 0) {
+        return "<font color='#dc143c'>ID(s) not entered</font>";
+    }
+
+    if (!is_int(to_int_or_null($arr[0]))
+        or ($arr[0] != "0"
+        and $arr[0] != "1"
+        and $arr[0] != "2")){
+        return "<font color='#dc143c'>Incorrect level</font>";
+    }
+    $level = to_int_or_null($arr[0]);
+
+    $return_msg = "";
+    $level_msg = match ($level) {
+        0 => "<font color='green'>default user</font>",
+        1 => "<font color='#1e90ff'>premium user</font>",
+        2 => "<font color='#b8860b'>administrator</font>",
+        default => "<font color='#dc143c'>UNKNOWN</font>",
+    };
+    $db = new SQLite3(__DIR__.DB_PATH."user.db");
+    for ($i = 0; $i < $id_count; $i++) {
+        $id = $arr[$i+1];
+        $level_now = $db->query("SELECT level FROM user WHERE id=$id")->fetchArray(SQLITE3_NUM)[0];
+        if ($level_now == "") {
+            $return_msg .= "<font color='#dc143c'>User not found: </font>'$id'<br>";
+            continue;
+        }
+        if (to_int_or_null($level_now) == $level) {
+            $return_msg .= "User '$id' is already $level_msg<br>";
+            continue;
+        }
+        $db->query("UPDATE user SET level=$level WHERE id=$id");
+        $return_msg .= "User '$id' level set to $level_msg<br>";
     }
     $db->close();
     return $return_msg;
