@@ -219,7 +219,7 @@ function unban_by_id($arg): string {
             if ($result == "") {
                 $return_msg .= "<font color='#dc143c'>User not found: </font>'$id'<br>";
             } else if ($result == 0) {
-                $return_msg .= "<font color='#b8860b'>User alredy unbanned: </font>'$id'<br>";
+                $return_msg .= "<font color='#b8860b'>User is not banned: </font>'$id'<br>";
             } else {
                 $db->query("UPDATE user SET ban=0 WHERE id=$id");
                 $return_msg .= "<font color='green'>User unbanned: </font>'$id'. To return user status and link: <font color='#008b8b'>'undostatlink $id'</font><br>";
@@ -312,5 +312,89 @@ function set_level($arg): string {
         $return_msg .= "User '$id' level set to $level_msg<br>";
     }
     $db->close();
+    return $return_msg;
+}
+
+function user_info($arg): string {
+    $return_msg = "";
+
+    $db = new SQLite3(__DIR__.DB_PATH."user.db");
+    try {
+        $arr = explode(" ", $arg);
+
+        $id = $arr[0];
+        if (!is_int(to_int_or_null($id))) {
+            return "<font color='#dc143c'>Incorrect argument:</font> '$id'<br>";
+        }
+        $result = $db->query("SELECT * FROM user WHERE id=$id")->fetchArray(SQLITE3_ASSOC);
+        if ($result == null) {
+            $db->close();
+            return "<font color='#dc143c'>User not found ID: </font>'$id'<br>";
+        }
+        foreach ($result as $key => $value) {
+            if (is_string($value)) {
+                $return_msg .= "<font color='#008b8b'>$key</font>='$value', <br>";
+            } else if (is_null($value)){
+                $return_msg .= "<font color='#1e90ff'>$key</font>=NULL, <br>";
+            } else {
+                $return_msg .= "<font color='green'>$key</font>=$value, <br>";
+            }
+        }
+        $return_msg = substr($return_msg, 0, -6)."<br>";
+        //$return_msg = str_replace("|", "|<br>", $return_msg);
+
+        $db->close();
+        return $return_msg;
+
+    } catch (Exception) {
+        $db->close();
+        return "<font color='#dc143c'>Error</font><br>";
+    }
+}
+
+function telegram($arg): string {
+    $arr = explode(" ", $arg);
+    $cmd = to_int_or_null($arr[0]);
+    $return_msg = "";
+
+    if (!($cmd === 0 or $cmd === 1)) {
+        return "<font color='#dc143c'>Incorrect argument</font><br>";
+    }
+
+    exec("wsl pgrep -f main_tgbot.py", $program_return);
+    $python_id = to_int_or_null($program_return[0]);
+    if ($python_id == null) {
+        // python is NOT running
+        if ($cmd == 1) {
+            $return_msg .= "Run";
+            switch (strtolower(PHP_OS_FAMILY)) {
+                case "windows":
+                    pclose(popen("start /B wsl ".str_replace(" ", " \"", TG_BOT_RUN).'"' , "r"));
+                    break;
+                case "linux":
+                    exec(TG_BOT_RUN." > /dev/null &");
+                    break;
+            }
+        } else {
+            $return_msg .= "Bot is'nt started";
+        }
+
+    } else {
+        // python is running
+        if ($cmd == 0) {
+            $return_msg .= "Kill";
+            switch (strtolower(PHP_OS_FAMILY)) {
+                case "windows":
+                    pclose(popen("start /B wsl kill $python_id" , "r"));
+                    break;
+                case "linux":
+                    exec("kill $python_id > /dev/null &");
+                    break;
+            }
+        }
+        else {
+            $return_msg .= "Bot already started";
+        }
+    }
     return $return_msg;
 }

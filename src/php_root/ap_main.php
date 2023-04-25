@@ -42,9 +42,16 @@ if (check_key($key)){
         case "setlevel":
             $out .= set_level($arg);
             break;
+        case "userinfo":
+            $out .= user_info($arg);
+            break;
+        case "telegrambot":
+            $out .= telegram($arg);
+            break;
         default:
             $out .= "<font color='#b8860b'>Unknown command</font><br>Use '<font color='#008b8b'>help</font>' for more information<br>";
             break;
+
     }
 } else {
     $out .= "<font color='#dc143c'>Incorrect key</font><br>";

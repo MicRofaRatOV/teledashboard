@@ -1,7 +1,5 @@
 #!/usr/bin/python3
 
-# import os
-
 import telebot
 from db_connector import DBConnection, FileConnection, get_time_to_update
 import messages as tmsg

@@ -37,3 +37,7 @@ MIN_SLINK_LENGTH = 4  # not recommended <= 2
 SLINK_SYMBOLS = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM0123456789_"  # Dont use "." symbol
 FILE_SYMBOLS = """qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM0123456789_.,%#@!№;&()+-=~\
 йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ"""
+
+# Roots
+import os
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))

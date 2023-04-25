@@ -16,8 +16,8 @@ Main bot: [@tele_dash_board_bot] (RU) [site](https://teledashboard.mf47.ru/)
 TOKEN = "1111111111:to-kE_n"
 ```
 5. Configure /your/folder/name/telegram/**server\_info**.**py** file
-6. *OPTIONAL*. You can update actual version of your site in /your/folder/name/db/**web.db** using [DB Browser for SQLite]
-7. *OPTIONAL*. You can configure /your/folder/name/**statistics.db**
+6. Configure /your/folder/name/php_root/**vars.php** file
+7. *OPTIONAL*. You can configure /your/folder/name/**statistics.py**
 
 ### Python
 1. Install [python 3.11]
