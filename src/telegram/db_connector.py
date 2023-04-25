@@ -576,6 +576,22 @@ class FileConnection(Connection):
             now = self.select("user", "mb_traffic", f"id={self._uid}").fetchall()[0][0]
             self.update("user", "mb_traffic", str(now+mb), f"id={self._uid}")
 
+    def delete_all_files(self, uid=-1):
+        if uid == -1:
+            uid = self.get_id()
+        file_fetched = self.select("file", "key", f"owner={uid} AND status=0").fetchall()
+        key_list = []
+        name_list = []
+        if len(file_fetched) == 0:
+            return None, None
+        for i in range(len(file_fetched)):
+            file_now = file_fetched[i][0]
+            if self.delete_file(file_now):
+                key_list.append(file_now)
+                name_list.append(self.get_file_name(file_now))
+
+        return key_list, name_list
+
     def rename_file(self, key, new_name):
         """
         0 - succed;

@@ -146,9 +146,9 @@ def profile(message):
     bot.send_message(message.from_user.id, combined_message, reply_markup=keyboard())
 
 
-@bot.message_handler(commands=["select"])  # TODO: Change to file help
-def select(message):
-    bot.send_message(message.from_user.id, tmsg.TO_SELECT_FILE, parse_mode="MARKDOWN")
+@bot.message_handler(commands=["file"])  # TODO: Change to file help
+def file(message):
+    bot.send_message(message.from_user.id, f"{tmsg.TO_SELECT_FILE}\n\n{tmsg.TO_DELETE_FILE}", parse_mode="MARKDOWN")
 
 # TODO: def search_file(), history(), rename_file()
 
@@ -340,6 +340,7 @@ def all_messages(message):
             return
     if message.text.count(":") > 0:
         command = message.text.split(":")
+        command[0] = command[0].lower()
         match command[0]:
             # Change super link
             case "sl":
@@ -383,6 +384,13 @@ def all_messages(message):
                 if banned(bot, message, dbc):
                     return
                 fbc = FileConnection(message.from_user.id)
+                if command[1].lower() == "all":
+                    deleted_files = fbc.delete_all_files()
+                    msg = "Удалены файлы:\n\n"
+                    for f in deleted_files[1]:
+                        msg += f"{f}\n"
+                    bot.send_message(message.from_user.id, msg)
+                    return
                 try:
                     status = fbc.remove_file_by_number(int(command[1]))
                     match status:
